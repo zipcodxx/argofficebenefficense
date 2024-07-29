@@ -1,0 +1,30 @@
+$(document).ready(function () {
+    var sidebar = $("#SideBar_ayuda");
+    var overlay = $("#SideBar_ayuda-Overlay");
+
+    $("body").append(sidebar);
+    $("body").append(overlay);
+
+    //Chequear RTD.
+    //A veces no se carga la imagen, y queda el margen feo del RTD.
+
+    if ($("#bannerTopImage img").length == 0)
+        $("#bannerTopImage img").remove();
+});
+
+function ShowSideBar(title, valor) {
+
+    var haystackText = document.getElementById("SideBar_ayuda").innerHTML;
+
+    var replaced = haystackText.replace('titulo_change', title);
+    var replaced = replaced.replace('descripcion_change', valor);
+
+    document.getElementById("SideBar_ayuda").innerHTML = replaced;
+
+    document.getElementById("SideBar_ayuda").style.right = "0px";
+    document.getElementById("SideBar_ayuda-Overlay").style.display = "block";
+}
+function CloseSideBar() {
+    document.getElementById("SideBar_ayuda").style.right = "-420px";
+    document.getElementById("SideBar_ayuda-Overlay").style.display = "none";
+}

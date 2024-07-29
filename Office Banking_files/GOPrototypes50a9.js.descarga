@@ -1,0 +1,1143 @@
+/*
+*  Project: Galicia Office
+*  Description: 
+*  Author: Michel Abdala
+*  License: 
+*/
+
+// the semi-colon before function invocation is a safety net against concatenated
+// scripts and/or other plugins which may not be closed properly.
+(function ($, window, undefined) {
+
+    // Best practice: this plugin adds only one method to the jQuery object.
+    // Also ensures that the watermark code is only added once.
+    $.GODialog = $.GODialog || {
+
+        // Current version number of the plugin
+        version: "1.0.0",
+
+        runOnce: true,
+
+        // Default options 
+        options : { 
+            autoOpen: false,
+            modal: true,
+            show: { effect: "blind", duration: 300 },
+            hide: { effect: "blind", duration: 300 },
+            //minHeight: 70,
+            autoWidth: false,
+            autoHeight: false,
+            displayLoading: true,
+            close: function(){ closePendantMsgTooltipsPendant(); }, //Si se lo pisa el close, agregar tambien esto por las dudas que tenga tooltips
+            //disabledCloseButton: false
+            idDialog: ''
+        }
+    };
+
+    $.fn.GODialog = $.fn.GODialog || function (target, options) {
+
+        if (!this.length) {
+            return this;
+        }
+
+        if (typeof (options) === "object") {
+            options = $.extend({}, $.GODialog.options, options);
+        }
+        else if (typeof (options) === "string") {
+            options = $.extend({}, $.GODialog.options, options);
+            //options = $.extend({}, $.watermark.options, { className: options });
+        }
+        else {
+            options = $.GODialog.options;
+        }
+
+        if (typeof (options.htmlGetter) === "undefined") {
+            throw 'htmlGetter necesita ser seteado';
+        }
+
+        return this.each(
+		    function () {
+                var $object = $(this);
+
+                if (typeof (options.displayLoading) !== "undefined" && options.displayLoading) {
+                    $(target).html('<div class="cont-loading"><span class="loading"></span></div>');
+                }
+
+                //if (typeof (options.disabledCloseButton) !== "undefined" && options.disabledCloseButton) {
+                //    options = $.extend({}, options, { buttons: {} } );
+                //}
+                
+                if (typeof (options.autoWidth) !== "undefined" && !options.autoWidth && typeof (options.width) === "undefined") {
+                    options = $.extend({}, options, { width: ($(window).width() < 600) ? $(window).width() : 600 } );
+                }
+
+                if (typeof (options.autoHeight) !== "undefined" && !options.autoHeight && typeof (options.height) === "undefined") {
+                    options = $.extend({}, options, { height: ($(window).height() < 500) ? $(window).height() : 500 } );
+                }
+
+                //Hago que se cargue el html en el div
+                options.htmlGetter();
+                
+                $(target).dialog(options);
+                $(target).dialog("open");
+
+
+                //Agrego botones en caso de que vengan dentro de las options
+                if (typeof (options.GOButtons) !== "undefined" && options.GOButtons) {
+                    var div = document.createElement("DIV");
+                    div.className = "button-box";
+                    
+                    for (var i = 0; i < options.GOButtons.length; i++) {
+                        var button = document.createElement("INPUT");
+                        button.type = "button";
+                        button.className = "btn";
+                        button.id = "btn" + options.GOButtons[i].text;
+                        button.name = "btn" + options.GOButtons[i].text;
+                        button.value = options.GOButtons[i].text;
+                        button.onclick = options.GOButtons[i].click;
+
+                        div.appendChild(button);
+                    }
+                    $(target).append(div);
+                }
+                
+                //Elimino el título de la X para que no se le genere el tooltip
+                $(target).parent().find("button").first().attr('title', '');
+                $(target).parent().find("button").first().attr('id', 'closeButtonPopUp');
+
+                if(options.idDialog != ''){
+                    var elem = $(target).closest(".ui-dialog").first();
+                    $(elem).attr("id",options.idDialog);
+                }
+
+		    }
+	    );
+    };
+
+
+})(jQuery, window);
+
+
+/*
+*  Project: 
+*  Description: 
+*  Author: 
+*  License: 
+*/
+
+(function ($, window, undefined) {
+
+    // Best practice: this plugin adds only one method to the jQuery object.
+    // Also ensures that the watermark code is only added once.
+    $.GOTableHeaderCheckBox = $.GOTableHeaderCheckBox || {
+
+        // Current version number of the plugin
+        version: "1.0.0",
+
+        runOnce: true,
+
+        // Default options 
+        options: {
+        }
+    };
+
+    $.fn.Update = $.fn.Update || function (target, options) {
+
+        if (typeof (options) === "object") {
+            options = $.extend({}, $.GOTableHeaderCheckBox.options, options);
+        }
+        else if (typeof (options) === "string") {
+            options = $.extend({}, $.GOTableHeaderCheckBox.options, options);
+            //options = $.extend({}, $.watermark.options, { className: options });
+        }
+        else {
+            options = $.GOTableHeaderCheckBox.options;
+        }
+
+        var selectAllCheck = $(this);
+        var table;
+        if(typeof(target) == 'undefined'){
+            table = $(this).closest('table').first();
+        }else{
+            table = $(target);
+        }
+
+        //Busco cual es la columna que posee este checkbox
+        var rowsHeader = $(table).find('tr:eq(0)');
+
+        if (rowsHeader.length == 0) {
+            $(selectAllCheck).attr('checked', false);
+            return;
+        }
+
+        var indexCheckboxAll = 0;
+        rowsHeader.first().find('th').each(function (index) {
+            if ($(this).find('input[type=checkbox]').length != 0) {
+                indexCheckboxAll = index;
+            }
+        });
+
+        var rows = $(table).find('tr:gt(0)');
+
+        if (rows.length == 0) {
+            $(selectAllCheck).attr('checked', false);
+            return;
+        }
+
+        var iCountChecked = 0;
+        var iCountDisabled = 0;
+
+        rows.each(function (index) {
+            var checkBox = $(rows[index]).find('td input[type=checkbox]')[indexCheckboxAll];
+
+            if (typeof checkBox !== 'undefined') {
+                if ($(checkBox).is(':checked')) {
+                    iCountChecked++;
+                }
+
+                if ($(checkBox).prop('disabled')) {
+                    iCountDisabled++;
+                }
+            }
+        });
+
+        $(selectAllCheck).attr('checked', false);
+
+        if (iCountChecked + iCountDisabled == rows.length) {
+            $(selectAllCheck).attr('checked', true);
+        }
+    };
+
+    $.fn.GOTableHeaderCheckBox = $.fn.GOTableHeaderCheckBox || function (target, options) {
+
+        if (!this.length) {
+            return this;
+        }
+
+        if (typeof (options) === "object") {
+            options = $.extend({}, $.GOTableHeaderCheckBox.options, options);
+        }
+        else if (typeof (options) === "string") {
+            options = $.extend({}, $.GOTableHeaderCheckBox.options, options);
+            //options = $.extend({}, $.watermark.options, { className: options });
+        }
+        else {
+            options = $.GOTableHeaderCheckBox.options;
+        }
+
+        return this.each(function () {
+            var selectAllCheck = $(this);
+            $(selectAllCheck).click(function () {
+
+                var table;
+                if(typeof(target) == 'undefined'){
+                    table = $(this).closest('table').first();
+                }else{
+                    table = $(target);
+                }
+
+                //Busco cual es la columna que posee este checkbox
+                var rowsHeader = $(table).find('tr:eq(0)');
+
+                if (rowsHeader.length == 0) {
+                    return;
+                }
+
+                var indexCheckboxAll = 0;
+                rowsHeader.first().find('th').each(function (index) {
+                    if ($(this).find('input[type=checkbox]').length != 0) {
+                        indexCheckboxAll = index;
+                    }
+                });
+
+                var rows = $(table).find('tr:gt(0)');
+
+                if (rows.length == 0) {
+                    return;
+                }
+
+                rows.each(function (index) {
+                    var checkBox = $(rows[index]).find('td input[type=checkbox]')[indexCheckboxAll];
+
+                    if (typeof checkBox !== 'undefined') {
+                        if ($(selectAllCheck).is(':checked')) {
+                            if (!$(checkBox).is(':checked') && !$(checkBox).prop('disabled')) {
+                                checkBox.click();
+                            }
+                        } else {
+                            if ($(checkBox).is(':checked') && !$(checkBox).prop('disabled')) {
+                                checkBox.click();
+                            }
+                        }
+                    }
+                });
+
+                $(this).Update(target);
+            });
+        }
+	);
+    };
+})(jQuery, window);
+
+/**
+* jQuery.fn.sortElements
+* --------------
+* @author James Padolsey (http://james.padolsey.com)
+* @version 0.11
+* @updated 18-MAR-2010
+* --------------
+* @param Function comparator:
+*   Exactly the same behaviour as [1,2,3].sort(comparator)
+*   
+* @param Function getSortable
+*   A function that should return the element that is
+*   to be sorted. The comparator will run on the
+*   current collection, but you may want the actual
+*   resulting sort to occur on a parent or another
+*   associated element.
+*   
+*   E.g. $('td').sortElements(comparator, function(){
+*      return this.parentNode; 
+*   })
+*   
+*   The <td>'s parent (<tr>) will be sorted instead
+*   of the <td> itself.
+*/
+jQuery.fn.sortElements = (function () {
+
+    var sort = [].sort;
+
+    return function (comparator, getSortable) {
+
+        getSortable = getSortable || function () { return this; };
+
+        var placements = this.map(function () {
+
+            var sortElement = getSortable.call(this);
+            parentNode = sortElement.parentNode;
+
+            // Since the element itself will change position, we have
+            // to have some way of storing it's original position in
+            // the DOM. The easiest way is to have a 'flag' node:
+            nextSibling = parentNode.insertBefore(document.createTextNode(''),sortElement.nextSibling);
+
+            return function () {
+
+                if (parentNode === this) {
+                    throw new Error("You can't sort elements if any one is a descendant of another.");
+                }
+
+                // Insert before flag:
+                parentNode.insertBefore(this, nextSibling);
+                // Remove flag:
+                parentNode.removeChild(nextSibling);
+            };
+
+        });
+
+        return sort.call(this, comparator).each(function (i) {
+            placements[i].call(getSortable.call(this));
+        });
+
+    };
+
+})();
+
+/*
+*  Project: 
+*  Description: 
+*  Author: 
+*  License: 
+*/
+
+(function ($, window, undefined) {
+
+    // Best practice: this plugin adds only one method to the jQuery object.
+    // Also ensures that the watermark code is only added once.
+    $.GOTableSort = $.GOTableSort || {
+
+        // Current version number of the plugin
+        version: "1.0.0",
+
+        runOnce: true,
+
+        // Default options 
+        options: {
+            dateFormat: "dd/mm/yyyy"
+        }
+    };
+
+    $.fn.Update = $.fn.Update || function (options) {
+                
+    };
+
+    $.fn.GOTableSort = $.fn.GOTableSort || function (options) {
+
+        if (!this.length) {
+            return this;
+        }
+
+        if (typeof (options) === "object") {
+            options = $.extend({}, $.GOTableSort.options, options);
+        }
+        else if (typeof (options) === "string") {
+            options = $.extend({}, $.GOTableSort.options, options);
+            //options = $.extend({}, $.watermark.options, { className: options });
+        }
+        else {
+            options = $.GOTableHeaderCheckBox.options;
+        }
+
+        var parsers = [];
+
+        this.addParser = function (parser) {
+            var l = parsers.length,
+            a = true;
+            for (var i = 0; i < l; i++) {
+                if (parsers[i].id.toLowerCase() == parser.id.toLowerCase()) {
+                    a = false;
+                }
+            }
+            if (a) {
+                parsers.push(parser);
+            }
+        };
+
+        this.formatFloat = function (s) {
+            var i = parseFloat(s);
+            return (isNaN(i)) ? 0 : i;
+        };
+        this.formatInt = function (s) {
+            var i = parseInt(s, 10);
+            return (isNaN(i)) ? 0 : i;
+        };
+        this.isDigit = function (s) {
+            // replace all an wanted chars and match.
+            return /^[-+]?\d*$/.test($.trim(s.replace(/[,.']/g, '')));
+        };
+
+        // make shortcut
+        //var ts = $.GOTableSort;
+        var ts = this;
+
+        // add default parsers
+        ts.addParser({
+            id: "text",
+            is: function (s) {
+                return true;
+            }, format: function (s) {
+                return $.trim(s.toLocaleLowerCase());
+            }, type: "text"
+        });
+
+        ts.addParser({
+            id: "digit",
+            is: function (s) {
+                return ts.isDigit(s);
+            }, format: function (s) {
+                return ts.formatFloat(s);
+            }, type: "numeric"
+        });
+
+        ts.addParser({
+            id: "currency",
+            is: function (s) {
+                return /^[£$€?.]/.test(s);
+            }, format: function (s) {
+                return ts.formatFloat(s.replace(new RegExp(/[£$€]/g), "").replace(".", "").replace(",", ""));
+            }, type: "numeric"
+        });
+
+        ts.addParser({
+            id: "ipAddress",
+            is: function (s) {
+                return /^\d{2,3}[\.]\d{2,3}[\.]\d{2,3}[\.]\d{2,3}$/.test(s);
+            }, format: function (s) {
+                var a = s.split("."),
+        r = "",
+        l = a.length;
+                for (var i = 0; i < l; i++) {
+                    var item = a[i];
+                    if (item.length == 2) {
+                        r += "0" + item;
+                    } else {
+                        r += item;
+                    }
+                }
+                return ts.formatFloat(r);
+            }, type: "numeric"
+        });
+
+        ts.addParser({
+            id: "url",
+            is: function (s) {
+                return /^(https?|ftp|file):\/\/$/.test(s);
+            }, format: function (s) {
+                return jQuery.trim(s.replace(new RegExp(/(https?|ftp|file):\/\//), ''));
+            }, type: "text"
+        });
+
+        ts.addParser({
+            id: "isoDate",
+            is: function (s) {
+                return /^\d{4}[\/-]\d{1,2}[\/-]\d{1,2}$/.test(s);
+            }, format: function (s) {
+                return ts.formatFloat((s != "") ? new Date(s.replace(
+    new RegExp(/-/g), "/")).getTime() : "0");
+            }, type: "numeric"
+        });
+
+        ts.addParser({
+            id: "percent",
+            is: function (s) {
+                return /\%$/.test($.trim(s));
+            }, format: function (s) {
+                return ts.formatFloat(s.replace(new RegExp(/%/g), ""));
+            }, type: "numeric"
+        });
+
+        ts.addParser({
+            id: "usLongDate",
+            is: function (s) {
+                return s.match(new RegExp(/^[A-Za-z]{3,10}\.? [0-9]{1,2}, ([0-9]{4}|'?[0-9]{2}) (([0-2]?[0-9]:[0-5][0-9])|([0-1]?[0-9]:[0-5][0-9]\s(AM|PM)))$/));
+            }, format: function (s) {
+                return ts.formatFloat(new Date(s).getTime());
+            }, type: "numeric"
+        });
+
+        ts.addParser({
+            id: "shortDate",
+            is: function (s) {
+                return /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(s);
+            }, format: function (s) {
+                        
+                s = s.replace(/\-/g, "/");
+                if (options.dateFormat == "us") {
+                    // reformat the string in ISO format
+                    s = s.replace(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/, "$3/$1/$2");
+                } else if (options.dateFormat == "uk") {
+                    // reformat the string in ISO format
+                    s = s.replace(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/, "$3/$2/$1");
+                } else if (options.dateFormat == "dd/mm/yy" || options.dateFormat == "dd-mm-yy") {
+                    s = s.replace(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})/, "$1/$2/$3");
+                } else if (options.dateFormat == "dd/mm/yyyy" || options.dateFormat == "dd-mm-yyyy") {
+                    s = s.replace(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/, "$1/$2/$3");
+                            
+                    var date = new Date(s.split("/")[2], s.split("/")[1], s.split("/")[0], 0, 0, 0, 0);
+
+                    return ts.formatFloat(date.getTime());
+                }
+
+                        
+
+                return ts.formatFloat(new Date(s).getTime());
+            }, type: "numeric"
+        });
+        ts.addParser({
+            id: "time",
+            is: function (s) {
+                return /^(([0-2]?[0-9]:[0-5][0-9])|([0-1]?[0-9]:[0-5][0-9]\s(am|pm)))$/.test(s);
+            }, format: function (s) {
+                return ts.formatFloat(new Date("2000/01/01 " + s).getTime());
+            }, type: "numeric"
+        });
+        ts.addParser({
+            id: "metadata",
+            is: function (s) {
+                return false;
+            }, format: function (s, table, cell) {
+                var c = table.config,
+        p = (!c.parserMetadataName) ? 'sortValue' : c.parserMetadataName;
+                return $(cell).metadata()[p];
+            }, type: "numeric"
+        });
+
+        return this.each(function () {
+            var table = $(this);
+            $(table).addClass('tableSort');
+
+            var rowsHeader = $(table).find('tr:eq(0)');
+
+            rowsHeader.find('th').each(function (index) {
+                        
+                if (typeof options.excludeColumns !== 'undefined') {
+                    var excluded = false;
+                    $(options.excludeColumns).each(function () {
+                        if (this == index){
+                            excluded = true;
+                            return false;
+                        }
+                    });
+
+                    if (excluded) {
+                        return true; //Es un continue...
+                    }
+                }
+
+                //Por cada TH le agregamos una clase
+                $(this).addClass('thSort');
+
+                var th = $(this),
+                thIndex = th.index(),
+                inverse = false;
+
+                th.click(function () {
+
+                    table.find('td').filter(function () {
+
+                        return $(this).index() === thIndex;
+
+                    }).sortElements(function (a, b) {
+
+                        if ($.text([a]) == $.text([b])){
+                            return 0;
+                        }
+                                
+//                              //La papota acá...
+                        var parser = null;
+                        for (var i = 1; i < parsers.length; i++) {
+                            if (parsers[i].is($.text([a])) && parsers[i].is($.text([b]))) {
+                                parser = parsers[i];
+                            }
+                        }
+
+                        if (parser == null){
+                            parser = parsers[0];
+                        }
+
+                        if(parser.type == 'text') {
+                            return $.text([a]) > $.text([b]) ? inverse ? -1 : 1 : inverse ? 1 : -1;
+                        }
+
+                        if (parser.type == 'numeric') {
+                            //TODO - Bug con números mayores a 1 millón
+                            var dataA = parser.format($.text([a]));
+                            var dataB = parser.format($.text([b]));
+//                                    var dataA = ($.text([a])).replace(" ", "").replace("$", "").replace(".", "").replace(",", "");
+//                                    var dataB = ($.text([b])).replace(" ", "").replace("$", "").replace(".", "").replace(",", "");
+//                                    dataA = parseFloat(dataA);
+//                                    dataB = parseFloat(dataB);
+                                    
+                            return (dataA > dataB) ? inverse ? -1 : 1 : inverse ? 1 : -1;
+                        }
+                    }, function () {
+                        // parentNode is the element we want to move
+                        return this.parentNode;
+                    });
+
+                    inverse = !inverse;
+                });
+
+            });
+        });
+    };
+})(jQuery, window);
+
+/*
+*  Project: Galicia Office
+*  Description: Tooltips para mostrar mensajes - Reemplazo de "title"s html.
+*  Author: Juan Brito
+*  License: 
+*/ 
+(function ( $, window, undefined ) 
+    {
+    //Declaro el protoype del object GOMsgTooltip
+    $.GOMsgTooltip = $.GOMsgTooltip || {
+        version: "1.0.0",
+        runOnce: true,
+        //Opciones default
+        options : { 
+            // El tooltip se mostrará permanentemente hasta que cambie el objeto asociado?
+            showPermanentlyUntilChange: false,
+            // El mouseover del objeto asociado al tooltip será su disparador para que aparezca?
+            triggerOnMouseOver: false,
+            // El foco al objeto asociado al tooltip será su disparador para que aparezca?
+            triggerOnFocus: false,
+            // Tipo del tooltip(Espacios o "error"). Será blanco si se informa "", sino rojo si se informa "error".
+            type: "",
+            // Tipo del objeto asociado al tooltip, es para casos especiales en que merecen un tratamiento especial, por ejemplo "datepicker". Si no merece trato especial va en "".
+            targetType: "",
+            // Se oculta al hacer focus en el objeto asociado?
+            hideOnFocus: false,
+            // Ids de objetos que  al cambiar tambien pueden ocultar el tooltip, separados por un pipe ( "|" ) -> me sirve en campos asociados,
+            // por ejemplo telefono y codigo de area, si cualquiera de los dos cambia tal vez queramos sacar el tooltip y esto lo hace posible
+            idsOfElementsThatCanAlsoHideTooltip: "",
+            // Adicional que quiero agregarle a la distancia del top del elemento asociado
+            extraTop: 0,
+            // Adicional que quiero agregarle a la distancia del left del elemento asociado
+            extraLeft: 0,
+            // Quiero desasociar al tooltip del objeto? (no va a aparecer más hasta que lo vuelva a asociar)
+            deleteTooltip: false,
+            // Esto no debe informarse, es algo interno para el tratamiento de elementos con más elementos dentro -> para que aparezca en los trigger de todos los hijos tambien pero siempre desde el elemento contenedor
+            mainTarget: null,
+            // Como por default siempre va para la derecha, indicando esto en true va a ir para la izquierda -> El nombre de la propiedad está MAL jaja
+            haveToGoRight: false,
+            // Es un mensaje que aparecerá sobre un dialog?
+            isOnDialog: false,
+            // Queremos que el tooltip no se oculte cuando se cambie el objeto asociado?
+            dontHideTooltipOnTargetChange: false
+        },
+
+        //Variables privadas
+        _variables : { 
+            isMouseOverTooltip: false,
+            isMouseOverTarget: false,
+            isMouseOverChildren: false
+        }
+    };
+
+    $.fn.GOMsgTooltip = $.fn.GOMsgTooltip || function (options) 
+    {
+        //Si target es null, undefined, etc lo retorno
+        if (!this.length) 
+        {
+            return this;
+        }
+
+        //Extiendo las opciones default con las que se informaron
+        if (typeof (options) === "object" || typeof (options) === "string") 
+        {
+            options = $.extend({}, $.GOMsgTooltip.options, options);
+        }
+        else 
+        { 
+            options = $.GOMsgTooltip.options;
+        }
+
+        //********************************************VALIDACIONES********************************************//
+        //A menos que lo que se quiera sea eliminar el tooltip del target, debe venir un mensaje informado
+        if ((typeof (options.msg) === "undefined" || options.msg === "") && !options.deleteTooltip) {
+            throw 'msg necesita ser seteado';
+        }
+        //********************************************FIN VALIDACIONES********************************************//
+
+        return this.each(
+		    function () {
+                var targetJqueryfied = $(this);
+
+                //Solo el primero seteara el mainTarget, q será si mismo, después sus hijos seran recorridos y asociados pero solo el principal será mainTarget
+                if (options.mainTarget == null) 
+                {
+                    //Si el target está deshabilitado debo crear una máscara para que muestre el tooltip, ya que los elementos disabled no disparan eventos(como onmouseover).
+                    if(targetJqueryfied.is(':disabled') && !options.deleteTooltip){
+                        //Creo la mascara y la agrego directamente al body
+                        var spanMask = $("<span id='spanMask" + targetJqueryfied.attr('id') + "' class='hover-disabled'></span>");
+                        $('body').append(spanMask);
+
+                        //Creo el tooltip, junto con su flecha y el text, y los apendeo.
+                        var tooltip = $("<div class='cont-tooltip" + options.type + "' style='display:none;'></div>");
+                        var arrow= $( "<div class='arrow'></div>");
+                        var textLabel = $("<div class='tooltip'>" + options.msg +"</div>");
+
+                        tooltip.append(arrow);
+                        tooltip.append(textLabel);
+
+                        ///Agrego la clase cuando me indiquen de que lado visualizar el tooltip
+                        if (options.haveToGoRight) {
+                            tooltip.removeClass('left');
+                            tooltip.addClass('right');
+                        }
+                        else {
+                            tooltip.removeClass('right');
+                            tooltip.addClass('left');
+                        }
+                        ///appendeo el tooltip al body
+                        $('body').append(tooltip);
+
+                        //Ubico la mascara sobre el target
+                        spanMask.offset(targetJqueryfied.offset());
+                        spanMask.width(targetJqueryfied.outerWidth());
+                        spanMask.height(targetJqueryfied.outerHeight());
+
+                        //Obtengo los valores del target y del tooltip para luego calcular como y donde posicionarlo
+                        var offset = targetJqueryfied.offset();
+                        var width = targetJqueryfied.outerWidth();
+                        var tooltipWidth = tooltip.outerWidth();
+
+                        //Ubico el tooltip para que nazca desde la mitad del target
+                        var elementHeight = targetJqueryfied.height() * 0.5; // alto del elemento * 0.5 ==> obtengo el centro
+                        var tooltipHeight = arrow.outerHeight() * 0.5; // el alto de la flecha (sin tener en cuenta el margen) * 0.5 ==> obtengo el centro de la flecha 
+                        var height = elementHeight - tooltipHeight; 
+
+                        tooltip.offset({ top: targetJqueryfied.offset().top + height + 1});
+
+                        //Si el tooltip, posicionado a derecha del target, se pasa del main-container entonces lo ubico a izquierda del target
+                        if (offset.left + width + tooltipWidth > $('#main-container').offset().left + $('#main-container').width() && !options.haveToGoRight) {
+                            tooltip.removeClass('left');
+                            tooltip.addClass('right');
+                            tooltip.offset({ left: offset.left - tooltipWidth });
+                        }
+                        else {
+                            ///Le indico por la propiedad que tiene que ir a la izquierda/derecha el tooltip y hago el calculo correspondiente
+                            if (options.haveToGoRight) {
+                                tooltip.offset({ left: offset.left - tooltipWidth });
+                            }
+                            else {
+                                tooltip.offset({ left: offset.left + width }); 
+                            }
+                        }
+                        //Agrego a la mascara la propiedad de que muestre el tooltip en el over y lo oculte en el overout
+                        spanMask.hover(function(){
+                                tooltip.show();
+                            },
+                            function(){
+                                tooltip.hide();
+                            }
+                        );
+
+                        return;
+                    } else{
+                        //Asigno a las options el target principal y tambien sus vbles default
+                        options.mainTarget = targetJqueryfied;
+                        options.mainTarget.variables = $.GOMsgTooltip._variables;                            
+                    }
+                }
+
+                options.mainTarget.tooltip = null;
+
+                //Si se desea desasociar el tooltip
+                if (options.deleteTooltip) 
+                {
+                    //Le borro el metodo al target principal para que no lo siga creando
+                    options.mainTarget._createMsgTooltip = function (target, op) {
+                            //Se pisa la función para que no muestre el tooltip bajo ningún evento.
+                            return null;
+                    };
+
+                    //Hago lo mismo con la mascara span(si existe)
+                    $('#spanMask' + options.mainTarget.attr('id'))._createMsgTooltip = function (target, op) {
+                            //Se pisa la función para que no muestre el tooltip bajo ningún evento.
+                            return null;
+                    };
+                    //Remuevo la mascara tambien si existe
+                    $('#spanMask' + options.mainTarget.attr('id')).remove();
+                } 
+                else //Si se desea configurar el tooltip(y no desasociarlo) 
+                { 
+                    //Si es el target principal crea la funcion que creará el tooltip
+                    options.mainTarget._createMsgTooltip = function (target, op) 
+                    {
+                            var tooltip;
+                            //Creo el tooltip
+                            if(op.triggerOnMouseOver)
+                            {
+                                //Si va a ser disparado por mouseover lo creo con el atributo mouseOverTooltip
+                                tooltip = $("<div targetId='"+ $(target).attr('id') + "' name='tooltip' class='cont-tooltip " + op.type + "' mouseOverTooltip='true'></div>");
+                            }
+                            else
+                            {
+                                //Si no va a ser disparado por mouseover(seguramente on focus) lo creo sin nada especial
+                                tooltip = $("<div targetId='"+ $(target).attr('id') + "' name='tooltip' class='cont-tooltip " + op.type + "'></div>");
+                                //para que se tape si hay algo primero, como el menu, le modifico el z-index
+                                tooltip.css('z-index', 10);
+                                //Si va a aparecer sobre un dialog le modifico de nuevo el z-index
+                                if (op.isOnDialog) {
+                                    tooltip.css('z-index', 2000);//Para que aparezca sobre el dialog y no tapado
+                                }
+                            }
+
+                            //Creo la flecha y el texto del tooltip
+                            var arrow= $( "<div class='arrow'></div>");
+                            var textLabel = $("<div class='tooltip'></div>");
+
+                            //Uno los elementos al tooltip
+                            tooltip.append(arrow);
+                            tooltip.append(textLabel);
+
+                            //Appendeo al body el tooltip
+                            $('body').append(tooltip);    
+
+                            //Le seteo el mensaje
+                            textLabel.html(op.msg);
+
+                            //Obtengo las propiedades del target y del tooltip y sus elementos para poder calcular sus posiciones
+                            var offset = target.offset();
+                            var width = target.width();
+                            var elementHeight = target.height() * 0.5;
+                            var tooltipHeight = arrow.height() * 0.5;
+                            var tooltipWidth = tooltip.width() + arrow.width(); 
+                            var height = elementHeight - tooltipHeight; 
+                            var extraLeft = op.extraLeft;
+                            var extraTop = op.extraTop;
+
+                            //Seteo la posicion de la flecha en relacion al tooltip
+                            arrow.offset( { top: tooltip.offset().top + (tooltip.height() * 0.5) - (arrow.height() * 0.5) } );
+
+                            var haveToGoRight = op.haveToGoRight;
+
+                            //Analizo si el tipo de target merece algun trato especial 
+                            if (op.targetType != "") {
+                                switch (op.targetType){
+                                    case "datepicker":
+                                        //Marco que tiene que apuntar a la derecha porque sino tapa el picker
+                                        haveToGoRight = true;
+                                        break;
+                                    default:
+                                        throw "targetType " + op.targetType + " no definido para GOMsgTooltip.";
+                                }
+                            }
+
+                            //Si el tooltip, a la derecha del target, se pasa el main-container, entonces lo hago ir para la izquierda
+                            //Ademas calculo la altura del tooltip respecto del target para que vaya al medio
+                            if (offset.left + width + tooltipWidth + extraLeft > $('#main-container').offset().left + $('#main-container').width() || haveToGoRight) {
+                                tooltip.addClass('right');
+                                tooltip.offset( { top: offset.top + height - arrow.position().top - extraTop, left: offset.left - tooltipWidth - extraLeft} );
+                            } else {
+                                tooltip.addClass('left');
+                                tooltip.offset( { top: offset.top + height - arrow.position().top - extraTop, left: offset.left + width + extraLeft} );
+                            }
+
+                            //Al remover el tooltip nulleo la vble del target y marco que ya no hay mouseover sobre el tooltip(en caso de que hubiese)
+                            tooltip.on("remove", function () {
+                                op.mainTarget.variables.isMouseOverTooltip = false;
+                                if (op.mainTarget.tooltip != null) {
+                                    op.mainTarget.tooltip = null;
+                                }
+                            });
+
+                            //Al ocultar el tooltip marco que ya no hay mouseover sobre el tooltip(en caso de que hubiese)
+                            tooltip.on("hide", function () {
+                                op.mainTarget.variables.isMouseOverTooltip = false;
+                            });
+
+                            //Al remover el target tambien oculto el tooltip
+                            target.on("remove", function () {
+                                if (op.mainTarget.tooltip != null) {
+                                    op.mainTarget.tooltip.remove();
+                                }
+                            });
+
+                            //Al ocultar el target, oculto el tooltip
+                            target.on("hide", function () {
+                                if (op.mainTarget.tooltip != null) {
+                                    op.mainTarget.tooltip.remove();
+                                }
+                            });
+
+                            //Cuando se realiza mousever al tooltip
+                            tooltip.mouseover( 
+                                function () 
+                                { 
+                                    //Si el tooltip todavia no fue creado, lo creo
+                                    if (options.mainTarget.tooltip == null) {
+                                        options.mainTarget.tooltip = options.mainTarget._createMsgTooltip(options.mainTarget, options);
+                                    }
+                                    return false;
+                                }
+                            );
+
+                            //Devuelvo el tooltip
+                            return tooltip;
+                    };
+                    
+                    //Si el tooltip no debe mostrarse permanentemente
+                    if(!options.showPermanentlyUntilChange)
+                    {
+                        //Si el tooltip debe aparecer cuando se hace mouseover sobre el target
+                        if (options.triggerOnMouseOver) {
+                            //Le asigno al target comportamiento en su mouseover
+                            targetJqueryfied.mouseover(function() {
+                                //A cada objeto con el atributo mouseOverTooltip le saco el mouseover
+                                $( '[mouseOverTooltip]' ).each(  
+                                    function ()
+                                    {
+                                        $(this).remove();
+                                    }
+                                );
+
+                                //Identifico si es el target principal o un hijo
+                                if (targetJqueryfied === options.mainTarget) {
+                                    options.mainTarget.variables.isMouseOverTarget = true;
+                                } else {
+                                    options.mainTarget.variables.isMouseOverChildren = true;
+                                }
+
+                                //Si el tooltip todavia no fue creado, lo creo
+                                if (options.mainTarget.tooltip == null) {
+                                    options.mainTarget.tooltip = options.mainTarget._createMsgTooltip(options.mainTarget, options);
+                                }
+
+                                //Muestro el tooltip
+                                options.mainTarget.tooltip.show();
+                                    
+                                //Si se hace mouseover del tooltip, seteo la vble en true
+                                options.mainTarget.tooltip.mouseover(
+                                    function (){
+                                        options.mainTarget.variables.isMouseOverTooltip = true;
+                                    }
+                                );
+
+                                //Si se hace mouseout del tooltip
+                                options.mainTarget.tooltip.mouseout(function () {
+                                    //Seteo la vble en false
+                                    options.mainTarget.variables.isMouseOverTooltip = false;
+                                            
+                                    //Se setea que en un tiempo se verifique que el mouseout del tooltip fue para hacer mouseover del 
+                                    //target(o sea desplazo el mouse desde el tooltip al target), si no fue así entonces lo remuevo
+                                    window.setTimeout(function (){
+                                        if (!options.mainTarget.variables.isMouseOverTarget && !options.mainTarget.variables.isMouseOverChildren && options.mainTarget.tooltip != null) {
+                                            options.mainTarget.tooltip.remove();
+                                        }                                        
+                                    }, 50);
+                                });
+                            });
+
+                            //En el mouseout del target se setea que despues de unos instantes se ejecute la validacion
+                            //para saber si el mouseout correspondio al mouseover del tooltip(Desplazo el mouse del target al toolip). De no ser así lo oculta.
+                            targetJqueryfied.mouseout(function() {
+                                if (targetJqueryfied === options.mainTarget) {
+                                    options.mainTarget.variables.isMouseOverTarget = false;
+                                } else {
+                                    options.mainTarget.variables.isMouseOverChildren = false;
+                                }
+
+                                window.setTimeout(function (){
+                                    if (!options.mainTarget.variables.isMouseOverChildren && !options.mainTarget.variables.isMouseOverTooltip && options.mainTarget.tooltip != null) {
+                                        options.mainTarget.tooltip.remove();
+                                    }                                        
+                                }, 50);
+                            });
+
+                            //Recorro los hijos del target para agregarle los comportamientos correspondientes(o sea los mismos que tiene el padre, para mostrar el tooltip)
+                            targetJqueryfied.children().each(function () { $(this).GOMsgTooltip(options); } );
+                        }
+
+                        //Si la aparicion del tooltip es en el onfocus
+                        if (options.triggerOnFocus) {
+                            //Cuando es focus del target lo creo y lo muestro
+                            targetJqueryfied.focus(
+                                function()
+                                {
+                                    if(options.mainTarget.tooltip == null)
+                                    {
+                                        options.mainTarget.tooltip = options.mainTarget._createMsgTooltip(options.mainTarget, options);
+                                    }                                    
+                                    options.mainTarget.tooltip.show();
+                                }
+                            );
+                            //Cuando es focusout del target lo remuevo
+                            targetJqueryfied.focusout(function() {
+                                    if(options.mainTarget.tooltip != null){
+                                        options.mainTarget.tooltip.remove();
+                                    }
+                            });
+                        }
+                    }
+                    else
+                    {
+                        //Si el tooltip debe mostrarse permanentemente hasta que cambie el target o alguno de los elementos que también lo pueden esconder
+
+                        //Muestro el tooltip(y lo creo si no esta creado)
+                        if(options.mainTarget.tooltip == null){
+                            options.mainTarget.tooltip = options.mainTarget._createMsgTooltip(options.mainTarget, options);
+                        }
+                        options.mainTarget.tooltip.show();
+
+                        //Agrego a los elementos, que al cambiar tambien pueden eliminar el tooltip, el comportamiento necesario para que lo hagan
+                        if (options.idsOfElementsThatCanAlsoHideTooltip != "") {
+                            //Armo el array de ids de elementos que pueden modificar el tooltip
+                            var arrayOfElementsThatCanAlsoHideTooltip = options.idsOfElementsThatCanAlsoHideTooltip.split('|');
+                            //REcorro el array
+                            $(arrayOfElementsThatCanAlsoHideTooltip).each(function() {
+                                //Obtengo el tipo del elemento
+                                var inputType = $('#' + this).attr('type') || $('#' + this).get(0).tagName;
+                                //Segun el tipo le asigno en el evento correspondiente(keyup o change por ej) que remueva el tooltip
+                                switch (inputType.toLowerCase()){
+                                    case "textarea":
+                                    case "text":
+                                        $('#' + this).keyup(function() {
+                                            if (options.mainTarget.tooltip != null){
+                                                options.mainTarget.tooltip.remove();
+                                            }
+                                        });
+                                        break;
+                                    case "file":
+                                    case "checkbox":
+                                    default:
+                                        $('#' + this).change(function() {
+                                            if (options.mainTarget.tooltip != null){
+                                                options.mainTarget.tooltip.remove();
+                                            }
+                                        });
+                                        break;
+                                }
+                            });
+                        }
+
+                        //Si debo borrar el tooltip cuando cambia el target
+                        if(!options.dontHideTooltipOnTargetChange){
+                            //Obtengo el tipo del elemento
+                            var inputType = options.mainTarget.attr('type') || options.mainTarget.get(0).tagName;
+                            //Segun el tipo le asigno en el evento correspondiente(keyup o change por ej) que remueva el tooltip
+                            switch (inputType.toLowerCase()){
+                                case "textarea":
+                                case "text":
+                                    //Si es un text o textarea entonces lo elimino en el keypress
+                                    options.mainTarget.keyup(function() {
+                                        if (options.mainTarget.tooltip != null){
+                                            options.mainTarget.tooltip.remove();
+                                        }
+                                    });
+                                    //Si es un text o textarea y adempas un datepicker entonces lo elimino en el change tambien
+                                    if (options.targetType == "datepicker"){
+                                        options.mainTarget.change(function() {
+                                            if (options.mainTarget.tooltip != null){
+                                                options.mainTarget.tooltip.remove();
+                                            }
+                                        });                                
+                                    }   
+                                    break;
+                                case "file":
+                                case "checkbox":
+                                default:
+                                    //por default lo elimino en el change
+                                    options.mainTarget.change(function() {
+                                        if (options.mainTarget.tooltip != null){
+                                            options.mainTarget.tooltip.remove();
+                                        }
+                                    });
+                                    break;
+                            }
+                        }
+
+                        //Si debo ocultarlo cuando se hace focus del target(por ejemplo porque aparece un mensaje alternativo en dicho caso)
+                        if (options.hideOnFocus) 
+                        {
+                            //Lo oculto en el focus
+                            options.mainTarget.focus(
+                                function(){
+                                    if(options.mainTarget.tooltip != null){
+                                        options.mainTarget.tooltip.hide();
+                                    }
+                                }
+                            );
+                            //Lo muestro en el focusout
+                            options.mainTarget.focusout(
+                                function(){
+                                    if(options.mainTarget.tooltip != null){
+                                        options.mainTarget.tooltip.show();
+                                    }
+                                }
+                            );
+                        }
+                    }
+
+                    //Si el tipo de tooltip está informado, le asigno la clase correspondiente asociada a ese tipo(espacios o "error")
+                    if (typeof (options.type) !== "undefined" && options.type != "") 
+                    {
+                        switch (options.type)
+                        {
+                            //Si el tooltip es de tipo "error" entonces agrego la clase para que cambie la visualizacion
+                            case "error":
+                                $(this.tooltip).addClass('error');
+                                break;
+                            default:
+                                throw "type " + options.type + " no definido para GOMsgTooltip.";
+                        }
+                    }
+                }
+		    }
+	    );
+    };
+    }
+  )(jQuery, window);

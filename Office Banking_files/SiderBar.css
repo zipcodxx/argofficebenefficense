@@ -1,0 +1,118 @@
+﻿@font-face {
+    font-family: 'Inter-Regular';
+    src: url('../fonts/Inter/Inter-Regular.eot');
+    src: url('../fonts/Inter/Inter-Regulard41d.eot?#iefix') format('embedded-opentype'), url('../fonts/Inter/Inter-Regular.svg#Inter-Regular') format('svg'), url('../fonts/Inter/Inter-Regular.ttf') format('truetype'), url('../fonts/Inter/Inter-Regular.woff') format('woff'), url('../fonts/Inter/Inter-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Inter-Medium';
+    src: url('../fonts/Inter/Inter-Medium.eot');
+    src: url('../fonts/Inter/Inter-Mediumd41d.eot?#iefix') format('embedded-opentype'), url('../fonts/Inter/Inter-Medium.svg#Inter-Medium') format('svg'), url('../fonts/Inter/Inter-Medium.ttf') format('truetype'), url('../fonts/Inter/Inter-Medium.woff') format('woff'), url('../fonts/Inter/Inter-Medium.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/*section.container {
+    font-family: Inter-Regular !important;
+}*/
+
+span.icon-page-information {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    display: block;
+    cursor: pointer;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+}
+
+    span.icon-page-information > img {
+        margin: 3px;
+    }
+
+.sidebar_ayuda {
+    width: 420px;
+    height: 100%;
+    position: fixed;
+    top: 0px;
+    right: -420px;
+    bottom: 0px;
+    background-color: #111;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    transition: .5s;
+    z-index: 2147483647;
+    background-color: #ffffff;
+}
+
+.sidebar_ayuda-overlay {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    background-color: rgba(0, 0, 0, 0.35) !important; /*Para la mayoria de browsers.*/
+    background: url('../../Images/transparente1.gif'); /*Para el bendito IE 8*/
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#4c000000,endColorstr=#4c000000)"; /*Para el bendito IE 8*/
+    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#4c000000', endColorstr='#4c000000'); /*Para el bendito IE 8*/
+    overflow-x: hidden;
+    overflow-y: hidden;
+    z-index: 2147483646; /*Igual que el Sidebar, -1*/
+}
+
+.sidebar_ayuda-closebutton {
+    display: block;
+    cursor: pointer;
+    position: absolute;
+    top: 24px;
+    right: 27px;
+    width: 18px;
+    height: 18px;
+    padding: 9px;
+}
+
+.sidebar_ayuda > h1 {
+    font-family: Inter-Medium !important;
+    font-size: 24px !important;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: normal;
+    letter-spacing: normal;
+    text-align: center;
+    color: #171a1f;
+    margin: 27px 143px 32px 143px;
+}
+
+.sidebar_ayuda > div {
+    padding-top: 21px;
+}
+
+.sidebar_ayuda .title {
+    font-family: Inter-Medium !important;
+    font-size: 17px;
+    font-weight: 500;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.29;
+    letter-spacing: 0.2px;
+    color: #171a1f;
+    margin: 0px 24px 8px 24px;
+}
+
+.sidebar_ayuda .contents {
+    font-family: Inter-Regular !important;
+    font-size: 14px;
+    font-weight: normal;
+    font-style: normal;
+    font-stretch: normal;
+    line-height: 1.57;
+    letter-spacing: 0.4px;
+    color: #171a1f;
+    margin: 0px 24px 35px 24px;
+}

@@ -1,0 +1,2695 @@
+/*
+*  Project: Galicia Office
+*  Description: Funciones generales cross sitio
+*  Author: Michel Abdala Salomon / Gabriel Desanto
+*  V: 1.1
+*/
+
+
+/* <Librería tipo='Crypto' info='métodos de encoding-decoding'> */
+if (typeof Crypto == "undefined" || !Crypto.util) {
+    (function () {
+
+        var base64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+        // Global Crypto object
+        var Crypto = window.Crypto = {};
+
+        // Crypto utilities
+        var util = Crypto.util = {
+
+            // Bit-wise rotate left
+            rotl: function (n, b) {
+                return (n << b) | (n >>> (32 - b));
+            },
+
+            // Bit-wise rotate right
+            rotr: function (n, b) {
+                return (n << (32 - b)) | (n >>> b);
+            },
+
+            // Swap big-endian to little-endian and vice versa
+            endian: function (n) {
+
+                // If number given, swap endian
+                if (n.constructor == Number) {
+                    return util.rotl(n, 8) & 0x00FF00FF |
+			       util.rotl(n, 24) & 0xFF00FF00;
+                }
+
+                // Else, assume array and swap all items
+                for (var i = 0; i < n.length; i++) {
+                    n[i] = util.endian(n[i]);
+                }
+
+                return n;
+            },
+
+            // Generate an array of any length of random bytes
+            randomBytes: function (n) {
+                for (var bytes = []; n > 0; n--) {
+                    bytes.push(Math.floor(Math.random() * 256));
+                }
+
+                return bytes;
+            },
+
+            // Convert a byte array to big-endian 32-bit words
+            bytesToWords: function (bytes) {
+                for (var words = [], i = 0, b = 0; i < bytes.length; i++, b += 8) {
+                    words[b >>> 5] |= bytes[i] << (24 - b % 32);
+                }
+                return words;
+            },
+
+            // Convert big-endian 32-bit words to a byte array
+            wordsToBytes: function (words) {
+                for (var bytes = [], b = 0; b < words.length * 32; b += 8) {
+                    bytes.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
+                }
+                return bytes;
+            },
+
+            // Convert a byte array to a hex string
+            bytesToHex: function (bytes) {
+                for (var hex = [], i = 0; i < bytes.length; i++) {
+                    hex.push((bytes[i] >>> 4).toString(16));
+                    hex.push((bytes[i] & 0xF).toString(16));
+                }
+                return hex.join("");
+            },
+
+            // Convert a hex string to a byte array
+            hexToBytes: function (hex) {
+                for (var bytes = [], c = 0; c < hex.length; c += 2) {
+                    bytes.push(parseInt(hex.substr(c, 2), 16));
+                }
+                return bytes;
+            },
+
+            // Convert a byte array to a base-64 string
+            bytesToBase64: function (bytes) {
+
+                // Use browser-native function if it exists
+                if (typeof btoa == "function") {
+                    return btoa(Binary.bytesToString(bytes));
+                }
+
+                for (var base64 = [], i = 0; i < bytes.length; i += 3) {
+                    var triplet = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+                    for (var j = 0; j < 4; j++) {
+                        if (i * 8 + j * 6 <= bytes.length * 8) {
+                            base64.push(base64map.charAt((triplet >>> 6 * (3 - j)) & 0x3F));
+                        }
+                        else {
+                            base64.push("=");
+                        }
+                    }
+                }
+
+                return base64.join("");
+
+            },
+
+            // Convert a base-64 string to a byte array
+            base64ToBytes: function (base64) {
+
+                // Use browser-native function if it exists
+                if (typeof atob == "function") {
+                    return Binary.stringToBytes(atob(base64));
+                }
+
+                // Remove non-base-64 characters
+                base64 = base64.replace(/[^A-Z0-9+\/]/ig, "");
+
+                for (var bytes = [], i = 0, imod4 = 0; i < base64.length; imod4 = ++i % 4) {
+                    if (imod4 == 0) {
+                        continue;
+                    }
+
+                    bytes.push(((base64map.indexOf(base64.charAt(i - 1)) & (Math.pow(2, -2 * imod4 + 8) - 1)) << (imod4 * 2)) |
+			           (base64map.indexOf(base64.charAt(i)) >>> (6 - imod4 * 2)));
+                }
+
+                return bytes;
+
+            }
+
+        };
+
+        // Crypto mode namespace
+        Crypto.mode = {};
+
+        // Crypto character encodings
+        var charenc = Crypto.charenc = {};
+
+        // UTF-8 encoding
+        var UTF8 = charenc.UTF8 = {
+
+            // Convert a string to a byte array
+            stringToBytes: function (str) {
+                return Binary.stringToBytes(unescape(encodeURIComponent(str)));
+            },
+
+            // Convert a byte array to a string
+            bytesToString: function (bytes) {
+                return decodeURIComponent(escape(Binary.bytesToString(bytes)));
+            }
+
+        };
+
+        // Binary encoding
+        var Binary = charenc.Binary = {
+
+            // Convert a string to a byte array
+            stringToBytes: function (str) {
+                for (var bytes = [], i = 0; i < str.length; i++) {
+                    bytes.push(str.charCodeAt(i) & 0xFF);
+                }
+
+                return bytes;
+            },
+
+            // Convert a byte array to a string
+            bytesToString: function (bytes) {
+                for (var str = [], i = 0; i < bytes.length; i++) {
+                    str.push(String.fromCharCode(bytes[i]));
+                }
+
+                return str.join("");
+            }
+
+        };
+
+    })();
+}
+/* </Librería> */
+
+/* Menu click - Resize altura de LI */
+$(document).ready(function () {
+    $(document).click(function () {
+        $(".main-menu li").removeClass("hover");
+
+        $(".main-menu li .hover-menu").slideUp();
+
+        //oculto el modal
+        $("#menuFadeOut").hide();
+    });
+
+    var setColumsHeight = function (cols, height) {
+        $.each(cols, function (i, val) {
+            $(val).css("height", height);
+        });
+    };
+    var getMaxColumnsHeight = function (cols) {
+        var currentHeight = 0, maxHeight = 0;
+        $.each(cols, function (i, val) {
+            currentHeight = $(val).height();
+            if (currentHeight > maxHeight) {
+                maxHeight = currentHeight;
+            }
+        });
+        return maxHeight;
+    };
+
+    var fitMenuColSizeCustom = function (menuRows) {
+        $.each(menuRows, function (j, row) {
+            var cols = $(row).children();
+            setColumsHeight(cols, getMaxColumnsHeight(cols));
+        });
+    };
+
+    var toogleMenuVisibility = function (currentlink) {
+
+        $(".main-menu li .hover-menu").slideUp();
+
+        //oculto el modal
+        $("#menuFadeOut").hide();
+
+        if ($(currentlink).hasClass('hover')) {
+            $(".main-menu li").removeClass("hover");
+            $(currentlink).removeClass("hover");
+
+            $(currentlink).find(".hover-menu").slideUp();
+
+            //oculto el modal
+            //$("#menuFadeOut").hide();
+        } else {
+            $(".main-menu li").removeClass("hover");
+            $(currentlink).addClass("hover");
+            //alert(currentlink.
+            $(currentlink).find(".hover-menu").slideDown();
+            //fitMenuColSizeCustom($($(currentlink).find(".cont-menu-compuesto > ul")));
+            fitMenuColSizeCustom(
+                $($(currentlink).find(".cont-menu-compuesto:not(.menu-fw) > ul"))
+            );
+
+            if (currentlink.parentElement.className == "main-menu") {
+                //muestro el modal
+                $("#menuFadeOut").show();
+            }
+        }
+    };
+
+    $(".main-menu li").keypress(function (ev) {
+        if (ev.which === 13) {
+            toogleMenuVisibility(this);
+            //            e.preventDefault();
+        }
+    });
+    $(".main-menu li").click(function (e) {
+        e.stopPropagation(); //stops click event from reaching document
+        toogleMenuVisibility(this);
+        //        e.preventDefault();
+    });
+
+    try {
+        document.getElementById("ExternalLink").onload = function () {
+            try {
+                document.getElementById("ExternalLink").contentWindow.document.body.onclick = function () {
+                    $(".main-menu li").removeClass("hover");
+                    $(".main-menu li .hover-menu").slideUp();
+
+                    //oculto el modal
+                    $("#menuFadeOut").hide();
+                };
+            } catch (e) { }
+        };
+    } catch (e) { }
+});
+
+//Tooltips menu
+$(document).ready(function () {
+    //Se editan los tooltips del menu top, si es que necesitan ir a derecha en lugar de a izquierda
+    $('span[tooltip-menu]').each(
+        function () {
+            var target = $(this).closest('a');
+            var arrow = $(this).find('.arrow').first();
+            //                        var tooltip = $(this).find('.tooltip').first();
+            var tooltip = $(this);
+
+            //obtengo los datos y hago los calculos necesarios para posicionar los elementos
+            var offset = target.offset();
+            var width = target.width();
+            var tooltipWidth = tooltip.width() + arrow.width();
+
+            //Seteo el tooltip segun los calculos realizados, a izquierda o derecha segun necesidad
+            if (offset.left + width + tooltipWidth > $(window).width()) {
+                $(this).removeClass('left');
+                $(this).addClass('right');
+                $(this).offset({ left: offset.left - tooltipWidth });
+            }
+        }
+    );
+});
+
+$(document).ready(function () {
+    if ($.browser.msie && parseInt($.browser.version, 10) < 8) {
+        ///Se busca las clases donde este el menu inactivo
+        $('.cont-menu .inactivo').each(function () {
+            ///Para menú con estilo de Nivel 1 
+            if ($(this).parents(':eq(1)').hasClass('level-1')) {
+                $(this).hover(
+                    function () {
+                        $(this).parents(':eq(2)').css('z-index', '900');
+                    },
+                    function () {
+                        $(this).parents(':eq(2)').css('z-index', '1');
+                    });
+            }
+            else {
+                ///Para menú con estilo de Nivel 2
+                if ($(this).parents(':eq(1)').hasClass('level-2')) {
+                    $(this).hover(
+                        function () {
+                            $(this).parents(':eq(4)').css('z-index', '900');
+                        },
+                        function () {
+                            $(this).parents(':eq(4)').css('z-index', '1');
+                        });
+                }
+                else {
+                    ///Default, Títulos sin hijos
+                    $(this).hover(
+                        function () {
+                            $(this).parent().css('z-index', '900');
+                        },
+                        function () { $(this).parent().css('z-index', '1'); }
+                        );
+                }
+            }
+        });
+    }
+});
+//Botones dropdown(por ejemplo, exportar)
+$(document).ready(function () {
+    $(".btn.dropdown").click(function (e) {
+        if ($(this).find("ul").css('display') == 'block') {
+            $(this).find("ul").slideUp();
+
+            //oculto el modal
+            $("#menuFadeOut").hide();
+        }
+        else {
+            e.stopPropagation(); //stops click event from reaching document
+            $(this).find("ul").slideDown();
+            $(document).click(function () {
+                $(".btn.dropdown").find("ul").slideUp();
+
+                //oculto el modal
+                $("#menuFadeOut").hide();
+            });
+        }
+    });
+});
+
+//PlaceHolders
+$(document).ready(function () {
+    $(".cont-place").click(function () {
+        var currentPlace = this;
+        currentPlaceInput = $(currentPlace).find($(".place"));
+        if (!(currentPlaceInput.is(':disabled'))) {
+            $(".place").removeClass("focus");
+            $(".place").focusout();
+
+            currentPlaceInput.focus();
+            currentPlaceInput.addClass("focus");
+        }
+    });
+
+    if ($(".place").length > 0) {
+        /*TODO - Check if there's any better alternative. 
+        1 - jquery's change() event -> No, doesn´t catch programatically changes.
+        2 - Incorporate in every page that has inputs with placeholders, and that changes the values programatically,
+        a "$(input).change();" right after the change, so the change event is forced. -> No, too dirty, may take too much work.
+        */
+        /*To catch programatically changes or onReady changes.  If there is any placeholder in the page,
+        I set a interval that runs every 100 ms, hiding the placeholders if the elements' values 
+        has been changed*/
+        setInterval(function () {
+            var divContenedores = $(".cont-place");
+            $.each(divContenedores, function () {
+                var currentPlace = this;
+                if ($(currentPlace).find($(".place")).val().length > 0) {
+                    $(currentPlace).find($(".text-holder")).css("display", "none");
+                } else {
+                    $(currentPlace).find($(".text-holder")).css("display", "block");
+                }
+            });
+        }, 100);
+    }
+    $(".cont-place").keyup(function () {
+        $(".place").removeClass("focus");
+        $(".place").focusout();
+
+        var currentPlace = this;
+        $(currentPlace).find($(".place")).focus();
+        $(currentPlace).find($(".place")).addClass("focus");
+
+        if ($(currentPlace).find($(".place")).val().length > 0) {
+            $(currentPlace).find($(".text-holder")).css("display", "none");
+        } else {
+            $(currentPlace).find($(".text-holder")).css("display", "block");
+        }
+    });
+
+    $(".place").focusout(function () {
+        $(this).removeClass("focus");
+    });
+});
+
+//Funcion que alinea anchos de header con anchos de columnas en tablas que se cargan dinamicamente y poseen scroll  
+function fixDividedTableWidth() {
+
+    $(".cont-table").each(function () {
+        var currentTable = this;
+
+        var body = $(currentTable).find(".t-body thead th");
+        var head = $(currentTable).find(".t-head th");
+
+        var bodyWidth = $($(currentTable).find(".t-body")).width();
+        var tHead = $(currentTable).find(".t-head");
+
+        var borderHead = $(currentTable).width() - bodyWidth;
+
+        $(tHead).css("border-right-width", borderHead);
+
+        $.each(body, function (index, value) {
+            if (($(value).html()).indexOf("/Images/default/loading.gif") == -1) {
+                var bodyWidth = $(value).width();
+                $(head[index]).css("width", bodyWidth);
+            }
+        });
+    });
+}
+
+//AGREGA CLASES A LOS TD DE UNA COLUMNA
+function UpdateTableAligns() {
+    //Altera el ultimo estilo del ultimo td
+    alterTableStyles();
+
+    disableInputs();
+}
+$(document).ready(function () {
+    UpdateTableAligns();
+});
+
+function closePendantMsgTooltipsPendant() {
+    $('.cont-tooltip').remove();
+}
+
+/*TODO - Si en algún momento se encuentra una forma de hacer que cierto ready
+ se ejecute despuse de todos los demas readys, hacer que el llamado a esta funcion
+ sea centralizado en el ready del core y en ningun lado más. Ya que sino hay que 
+ llamarla al final de los ready de cada página que cree inputs dinámicos en sus ready
+ (que se ejecutan despuse del ready del core).*/
+function disableInputs() {
+    //Si es ie y la version es menor que 9
+    if ($.browser.msie && parseInt($.browser.version, 10) < 9) {
+        //Le agrega a todos los inputs deshabilitados la clase disabled para que se muestren correctamente deshabilitados
+        $('input:disabled').addClass('disabled');
+    }
+}
+
+//Cambio de Slide de Logins
+function slideSwitch() {
+    var $active = $('#slideshow img.active');
+
+    if ($active.length == 0) {
+        $active = $('#slideshow img:last');
+    }
+
+    // use this to pull the images in the order they appear in the markup
+    var $next = $active.next().length ? $active.next() : $('#slideshow img:first');
+
+    // uncomment the 3 lines below to pull the images in random order
+
+    // var $sibs  = $active.siblings();
+    // var rndNum = Math.floor(Math.random() * $sibs.length );
+    // var $next  = $( $sibs[ rndNum ] );
+
+    $active.addClass('last-active');
+
+    $next.css({ opacity: 0.0 }).addClass('active').animate({ opacity: 1.0 }, 1000, function () { $active.removeClass('active last-active'); });
+}
+
+//AGREGA LA CLASE fila-link-arrow AL ÚLTIMO TD DE UN TR - SÓLO IE 7 y 8
+function alterTableStyles() {
+    var rows = $('table.fila-link tr');
+
+    if (rows.length != 0 && $.browser.msie && parseInt($.browser.version, 10) < 9) {
+        $(rows).find("td:last").addClass("fila-link-arrow");
+    }
+}
+
+window.onerror = function (msg, url, linenumber) {
+    try {
+
+        //Convierto el mensaje en b64 por si viaja código
+        var errMessage = Crypto.util.bytesToBase64(Crypto.charenc.UTF8.stringToBytes('Error message: ' + msg + '\nURL: ' + url + '\nLine Number: ' + linenumber));
+
+        $.ajax({
+            url: '/Users/LogClientSideError',
+            dataType: 'json',
+            type: "POST",
+            data: { errorInfo: errMessage }
+        });
+
+        //Comentado Hasta nuevo aviso
+        //MsgBoxV1('Usted podr&iacute;a estar experimentando un mal funcionamiento del sistema. Por favor intente logearse nuevamente o comun&iacute;quese con el centro de ayuda.');
+    }
+    catch (e) { }
+
+    return false;
+};
+
+function LogInfoClientCustom( msg , modulo) {
+    $.ajax({
+        url: '/Custom/LogInfoClientCustom',
+        dataType: 'json',
+        type: "POST",
+        data: { msg: msg , modulo: modulo}
+    });
+
+};
+
+var printObj = (typeof JSON !== "undefined") ? JSON.stringify : function (obj) {
+    //es un tipo base
+    var objType = typeof (obj);
+    if (objType == "string" || objType == "number" || objType == "boolean") {
+        return obj.toString();
+    }
+
+    //tiene estructura de excepcion
+    if (objType == "object"
+        && typeof obj.description !== "undefined"
+        && typeof obj.number !== "undefined"
+        && typeof obj.name !== "undefined"
+        && typeof obj.message !== "undefined") {
+
+        return "{ number: " + obj.number + ", description: " + obj.description + ", name: " + obj.name + ", message: " + obj.message + " }";
+    }
+
+    var arr = [];
+    $.each(obj, function (key, val) {
+        var next = key + ": ";
+        next += $.isPlainObject(val) ? printObj(val) : val;
+        arr.push(next);
+    });
+    return "{ " + arr.join(", ") + " }";
+};
+
+var decimalSeparator = ',';
+var mileSeparator = '.';
+
+var regEx_numbers = /^[0-9]+$/;
+var regEx_alpha = /[a-zA-Z]/;
+var regEx_alpha_space = /[\sa-zA-Z]/;
+var regEX_noNumbers=/\D+/;
+var regEx_alphanumeric = /[a-zA-Z0-9_-]/;
+var regEx_alphanumeric_without_hyphen_underscore = /[a-zA-Z0-9]/;
+var regEx_alphanumeric_without_hyphen_underscore_all = /^[a-zA-Z0-9]+$/;
+var regEx_alphanumeric_space = /[\sa-zA-Z0-9_-]/;
+var regex_no_space = /\s/;
+var regEx_mail_1 = /^[\w!#$%&'*+\-/=?\^_`{|}~]+(\.[\w!#$%&'*+\-/=?\^_`{|}~]+)*@((([\-\w]+\.)+[a-zA-Z]{2,})|(([0-9]{1,3}\.){3}[0-9]{1,3}))$/;
+var regEx_mail_2 = /^(([^<>()[\]\\.,;:\s@\""]+(\.[^<>()[\]\\.,;:\s@\""]+)*)|(\"".+\""))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+var reg_Domain = /:\/\/(.[^\/]+)/;
+var regEx_Alias = /^([0-9A-Za-z\-\.])/;
+var regEx_InternalComment = /^([0-9A-Za-z\s\-\.])/;
+var regEx_alphanumeric_withonly_space = /[\sa-zA-Z0-9]/;
+var regEx_alphanumeric_space_enie_dot_comma = /^[\sa-zA-Z0-9\.,\u00F1]+$/;
+var regEx_alphanumeric_withmail = /^[\sa-zA-Z0-9\.,@\u00F1]+$/;
+
+//Transferencias Exteriores - Comex
+var regEx_transfExtNif = /([0-9A-Za-z])/;
+var regEx_transfExt = /([0-9A-Za-z\s\-\.\(\)\/\:\,\+])/;
+var regEx_numbersTRX = /[0-9]/;
+
+String.prototype.padLeft = function (n, s) {
+    var t = this, L = s.length;
+    while (t.length + L <= n) {
+        t = s + t;
+    }
+    if (t.length < n) {
+        t = s.substring(0, n - t) + t;
+    }
+    return t;
+};
+
+String.prototype.padRight = function (n, s) {
+    var t = this, L = s.length;
+    while (t.length + L <= n) {
+        t += s;
+    }
+    if (t.length < n) {
+        t += s.substring(0, n - t);
+    }
+    return t;
+};
+
+function RenewTimeOut() {
+    //Renuva la sesion del lado del server
+    RenewTimeOutServerSide();
+
+    //Renueva la sesion del lado del cliente
+    RenewTimeOutClientSide();
+}
+
+var timeOutMinutes = null;
+var _countDownTimerTimeOut;
+function RenewTimeOutClientSide(minutes) {
+    if (timeOutMinutes == null && typeof minutes !== 'undefined') {
+        timeOutMinutes = minutes;
+    }
+
+    if (timeOutMinutes == null) {
+        timeOutMinutes = 30;
+    }
+
+    if (typeof _countDownTimerTimeOut !== 'undefined') {
+        clearTimeout(_countDownTimerTimeOut);
+    }
+
+    _countDownTimerTimeOut = setTimeout('TimeOutAlert();', (timeOutMinutes - 1) * 60 * 1000);
+}
+
+function RenewTimeOutServerSide() {
+    //Para renovar el del servidor usamos el servicio de alertas pendientes
+    GetAlertasPendientes();
+}
+
+var isExternalSite = false; //Se setea en el SiteMaster
+
+function TimeOutAlert() {
+    try {
+        //+++Cierro la conversacion de GALA+++//
+        resetStore();
+    }
+    catch (e) { } 
+
+
+    try {
+        MsgBoxV1(
+            'Voluntariamente o por exceso de tiempo inactivo te has desconectado de la aplicaci&oacute;n. Por favor volv&eacute; a conectarte.',
+            {
+                beforeClose: function (event, ui) { Link('/Users/LogIn'); },
+                //, buttons: { "Aceptar": function() { $(this).dialog("close"); } }
+                modal: true
+            }
+        );
+        //Le agrego el botón aceptar al dialog
+        var botonAceptar = $("<div class='footer-msj'><input type='button' class='gobutton1' value='Volver a conectarse' /></div>");
+        botonAceptar.click(function () {
+            Link('/Users/LogIn');
+        });
+        $('.ContentIframe').append(botonAceptar);
+    }
+    catch (e) { }
+}
+
+function GOToPermisosDeUsuarios(userID, userFullName) {
+    Link('/Administracion/SeleccionOperadorPerfiles?userID=' + userID + '&userFullName=' + userFullName);
+}
+
+function showHelp(currentModule) {
+
+        window.open('https://www.bancogalicia.com/banca/online/web/Empresas/ProductosyServicios/lejos-pero-cerca-empresas?utm_source=officebanking&utm_medium=referral' + '.htm');    
+}
+
+function ObtenerDetalleMensajeAyuda(titulo,descripcion) {
+    var div = document.getElementById("message_box");
+    var options =
+        {
+            htmlGetter: function () { $(div).html(descripcion); window.scrollTo(0, 0); },
+            displayLoading: true,
+            resizable: false,
+            minWidth: 900,
+            autoWidth: true,
+            autoHeight: true,
+            title: titulo,
+            idDialog: "Container-LogAuditoria"
+ 
+        };
+        $(document).GODialog(div, options);
+}
+
+function Terminosycondiciones(titulo,descripcion) {
+    var div = document.getElementById("TYC");
+    var options =
+        {
+            htmlGetter: function () { $(div).html(descripcion); window.scrollTo(0, 0); },
+            displayLoading: true,
+            resizable: false,
+            minWidth: 749,
+            autoWidth: true,
+            autoHeight: false,
+            Height:800, 
+            title: titulo,
+            idDialog: "Container-LogAuditoria"             
+        };
+        $(document).GODialog(div, options);
+       document.getElementById("TYC").style.overflowY = scroll;
+}
+
+
+
+function createAACookie(cookie) {
+   createCookieAA('PMdata', cookie, 180);
+
+   // createCookie('PMdata', cookie, 180);
+}
+
+function createCookieAA(name, value, days) {
+
+//Crea cookie para adaptive con el dominio
+    var expires = "";
+
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toGMTString();
+    }
+
+    var domain =  ";domain=.bancogalicia.com.ar";
+    document.cookie = name + "=" + value + expires + domain+  "; path=/";
+}
+
+
+function createCookie(name, value, days) {
+    var expires = "";
+
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toGMTString();
+    }
+
+    document.cookie = name + "=" + value + expires + "; path=/";
+}
+
+function readCookie(name) {
+
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1, c.length);
+        }
+        if (c.indexOf(nameEQ) == 0) {
+            return c.substring(nameEQ.length, c.length);
+        }
+    }
+    return null;
+}
+
+function clearCookie(name) {
+    createCookie(name, "", -1);
+}
+
+function clearAllCookies() {
+    var cookies = document.cookie.split(";");
+    for (var i = 0; i < cookies.length; i++) {
+        clearCookie(cookies[i].split("=")[0]);
+    }
+}
+
+function getCurrentDecimalSeparator() {
+    var n = 1.1;
+    n = n.toLocaleString().substring(1, 2);
+    return n;
+}
+
+function getIntPart(floatNumber) {
+    return Math.floor(floatNumber);
+}
+
+function getDecPart(floatNumber, numberOfDecimals) {
+    if (typeof numberOfDecimals === 'undefined') {
+        numberOfDecimals = 2;
+    }
+
+    return (floatNumber % 1).toFixed(numberOfDecimals).toString().replace('0,', '').replace('0.', '');
+}
+
+function toFloat(intPart, decPart) {
+    return parseFloat(intPart.toString().replace('.', '').replace(',', '') + '.' + decPart);
+}
+
+function formatNmbToMiles(nNmb, numberOfDecimals) {
+    var sNmb = getIntPart(nNmb).toString();
+    var sRes = "";
+    for (var j, i = sNmb.length - 1, j = 0; i >= 0; i--, j++) {
+        sRes = sNmb.charAt(i) + ((j > 0) && (j % 3 == 0) ? "." : "") + sRes;
+    }
+
+    sRes += decimalSeparator + getDecPart(nNmb, numberOfDecimals);
+
+    return sRes;
+}
+
+// Formatea numero con separadores decimales ("10000" => "10.000") 
+function formatNumberWithSeparators(sNmb) {
+    var sRes = "";
+    for (var j, i = sNmb.length - 1, j = 0; i >= 0; i-- , j++) {
+        sRes = sNmb.charAt(i) + ((j > 0) && (j % 3 == 0) ? "." : "") + sRes;
+    }
+    return sRes;
+}
+
+function setNavigationHTML(html) {
+    sessvars.Navigation = document.getElementById("navegacion").innerHTML;
+
+    document.getElementById("navegacion").innerHTML = html;
+}
+
+function restoreNavigationHTML() {
+    document.getElementById("navegacion").innerHTML = sessvars.Navigation;
+}
+
+function Link(url) {
+    window.location = url;
+}
+
+function PostTo(urlToPost) {
+
+    var form = document.createElement("form");
+
+    $(form).attr("action", urlToPost);
+    $(form).attr("method", "post");
+
+    $('body').append(form);
+
+    $(form).submit();
+}
+
+function PostToParams(urlToPost, paramArray) {
+    //Si tengo un formulario ya en el documento le obtengo los inputs y se los agrego al nuevo formulario
+    //De no encontrar un tag form, crea un nuevo formulario
+
+    var formSubmit = document.createElement("form");
+
+    var forms = document.getElementsByTagName("form");
+    if (forms.lenght != 0) {
+        $(forms[0]).find('input, select, textarea').each(
+            function (index) {
+                var input = $(this);
+                $(formSubmit).append(input.clone(true, true));
+            }
+        );
+    }
+
+    formSubmit = $(formSubmit);
+    formSubmit.attr("action", urlToPost);
+    formSubmit.attr("method", "post");
+
+    //PostMaker('/' + ControllerToGo +'/' + _Action, [['Texto', _Texto], ['Categoria', _Categoria], ['Valor', _Valor], ['Selected', true]]);
+
+    $('body').append(formSubmit);
+    if (paramArray != null) {
+        for (i = 0; i < paramArray.length; i++) {
+            var newInput = document.createElement("input");
+            newInput.type = 'hidden';
+            newInput.name = paramArray[i][0];
+            newInput.value = paramArray[i][1];
+            //$('<input/>', { type: 'hidden', name: paramArray[i][0], value: paramArray[i][1] })
+            $(newInput).appendTo(formSubmit);
+        }
+    }
+    formSubmit.submit();
+
+    formSubmit.remove();
+}
+
+function base64encode(str) {
+
+    var base64EncodeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    var base64DecodeChars = new Array(
+			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+			-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
+			52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
+			-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+			15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
+			-1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+			41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1);
+    var out, i, len;
+    var c1, c2, c3;
+
+    len = str.length;
+    i = 0;
+    out = "";
+    while (i < len) {
+        c1 = str.charCodeAt(i++) & 0xff;
+        if (i == len) {
+            out += base64EncodeChars.charAt(c1 >> 2);
+            out += base64EncodeChars.charAt((c1 & 0x3) << 4);
+            out += "==";
+            break;
+        }
+        c2 = str.charCodeAt(i++);
+        if (i == len) {
+            out += base64EncodeChars.charAt(c1 >> 2);
+            out += base64EncodeChars.charAt(((c1 & 0x3) << 4) | ((c2 & 0xF0) >> 4));
+            out += base64EncodeChars.charAt((c2 & 0xF) << 2);
+            out += "=";
+            break;
+        }
+        c3 = str.charCodeAt(i++);
+        out += base64EncodeChars.charAt(c1 >> 2);
+        out += base64EncodeChars.charAt(((c1 & 0x3) << 4) | ((c2 & 0xF0) >> 4));
+        out += base64EncodeChars.charAt(((c2 & 0xF) << 2) | ((c3 & 0xC0) >> 6));
+        out += base64EncodeChars.charAt(c3 & 0x3F);
+    }
+    return out;
+}
+
+function OnJsError(e, showMessageBox) {
+    try {
+        var errMessage = e;
+
+        try { errMessage = JSON.stringify(e, null, 4); } catch (e1) { errMessage = printObj(e); }
+
+        //Convierto el mensaje en b64 por si viaja código
+        errMessage = Crypto.util.bytesToBase64(Crypto.charenc.UTF8.stringToBytes('ErrInfo: ' + errMessage.toString()));
+
+        $.ajax({
+            url: '/Users/LogClientSideError',
+            dataType: 'json',
+            type: "POST",
+            data: { errorInfo: errMessage }
+        });
+
+        if (typeof showMessageBox === 'undefined' || showMessageBox == true) {
+            MsgBoxV1('Usted podr&iacute;a estar experimentando un mal funcionamiento del sistema. Por favor intente ingresar nuevamente o comun&iacute;quese con el centro de ayuda.');
+        }
+    }
+    catch (e) { }
+
+    return true;
+}
+
+function OnJsErrorDetailed(e, jsonObject) {
+    MsgBoxV1(JSON.stringify(e, null, 4));
+}
+
+function IsAjaxError(response) {
+    //Si el objeto response contiene una prop "CerrarSesion" entonces es considerado un ajaxError
+
+    if (typeof response.CerrarSesion !== 'undefined') {
+        return true;
+    }
+
+    try {
+        //Si la respuesta vino como texto (caso en el q un partial view responde con una excepción en JSON) lo parseo a JSON
+        if (typeof response === 'string' && typeof $.parseJSON(response).CerrarSesion !== 'undefined') {
+            return true;
+        }
+    }
+    catch (e) { }
+    return false;
+}
+
+function IsAjaxCheckedError(response) {
+    //Si el objeto response contiene una prop "CerrarSesion" entonces es considerado un ajaxError
+
+    if (typeof response.Error !== 'undefined') {
+        return true;
+    }
+
+    try {
+        //Si la respuesta vino como texto (caso en el q un partial view responde con una excepción en JSON) lo parseo a JSON
+        if (typeof response === 'string' && typeof $.parseJSON(response).Error !== 'undefined') {
+            return true;
+        }
+    }
+    catch (e) { }
+    return false;
+}
+
+function OnAjaxError(data) {
+
+    //Si es de tipo errorModel
+    if (IsAjaxError(data)) {
+        if (data.CerrarSesion) {
+            var codedUrl = location.href;
+            var url = decodeURIComponent(codedUrl).match(reg_Domain)[1];
+            var protocol = 'https:';
+            if (window.location.protocol != 'https:') {
+                protocol = 'http:';
+            }
+
+            Link(protocol + '//' + url);
+        }
+        else {
+            MsgBoxV1('Usted podr&iacute;a estar experimentando un mal funcionamiento del sistema. Por favor intente ingresar nuevamente o comun&iacute;quese con el centro de ayuda.');
+        }
+    }
+}
+
+function OnAjaxError1(data, extendOptions) {
+
+    //Si es de tipo errorModel
+    if (IsAjaxError(data)) {
+        if (data.CerrarSesion) {
+            var codedUrl = location.href;
+            var url = decodeURIComponent(codedUrl).match(reg_Domain)[1];
+            var protocol = 'https:';
+            if (window.location.protocol != 'https:') {
+                protocol = 'http:';
+            }
+
+            Link(protocol + '//' + url);
+        }
+        else {
+            MsgBoxV1('Usted podr&iacute;a estar experimentando un mal funcionamiento del sistema. Por favor intente ingresar nuevamente o comun&iacute;quese con el centro de ayuda.', extendOptions);
+        }
+    }
+}
+
+function OnAjaxCheckedError(data, extendOptions) {
+
+
+    //Si es de tipo errorModel
+    if (IsAjaxCheckedError(data)) {
+
+
+        var errorDiv = $("<div></div>");
+        $(document).append(errorDiv);
+
+        var dialogOptions =
+        {
+            htmlGetter: function () {
+                $.ajax({
+                    url: '/Error/GetErrorCheckedPopUP',
+                    dataType: 'html',
+                    type: "POST",
+                    data: { code: data.Code, message: data.Message, additionalInfo: data.AdditionalInfo },
+                    success: function (data) {
+                        $(errorDiv).html(data);
+
+                    },
+                    error: function (data) {
+                        OnAjaxError(data);
+                    }
+                });
+            },
+            resizable: false,
+            autoHeight: true,
+            title: data.Title
+        };
+
+
+        if (typeof extendOptions !== 'undefined') {
+            $.extend(dialogOptions, extendOptions);
+        }
+
+
+        $(document).GODialog(errorDiv, dialogOptions);
+
+
+    }
+}
+
+//Reemplaza ocurrencias de puntos 
+function ReplaceDots(value, newValue) {
+    value = value.replace(/\./g, newValue);
+    return value;
+}
+
+
+function GetAjaxJsonErrorDescription(response) {
+    return response.Mensaje;
+}
+
+function ShowUserInbox(filter, msgId) {
+    sessvars.checkedCounter = 0;
+
+    //Guardo el filtro que está usando, si es Unread o All para luego utilizar en el cambio de páginas de la partial view
+    if (filter == "All" || filter == "Unread" || filter == "SendMsg") {
+        sessvars.Inbox_ShowOnlyUnreadMessages = filter;
+    }
+
+    //Guardo la pestaña seleccionada
+    sessvars.Inbox_filter = filter;
+
+    //Si quisiéramos saber cual fue el último mensaje todo el tiempo...
+    //sessvars.Inbox_LastMsgId = msgId;
+
+    //Abro la ventana
+    var div = $("#inmaster_inbox");
+
+    $(document).GODialog(div, {
+        title: "Bandeja de Mensajes",
+        close: function (event, ui) { closePendantMsgTooltipsPendant(); InboxOnClose(); },
+        //open: function(event, ui) { $(".ui-dialog-titlebar-close", ui.dialog || ui).hide(); },
+        htmlGetter: function () {
+            $.ajax({
+                url: '/Users/GetUserInboxPatialView',
+                dataType: 'html',
+                type: "POST",
+                data: { filterOption: filter, messageID: msgId },
+                success: function (data) {
+                    div.html(data);
+                },
+                error: function (data) { OnAjaxError(data); }
+            });
+        },
+        displayLoading: true,
+        disabledCloseButton: true,
+        idDialog: "container-inbox"
+    });
+}
+
+function InboxOnClose() {
+    //Actualizo la mini inbox
+    //    GetMiniInbox();
+    //Actualizo las alertas pendientes
+    GetAlertasPendientes();
+
+    var bandejaMensajesButton = $('#spanBandejaMensajes');
+
+    sessvars.openedMessageId = null;
+
+    if (sessvars.unreadMessages >= 1) {
+        bandejaMensajesButton.addClass('alerta');
+    } else {
+        bandejaMensajesButton.removeClass('alerta');
+    }
+
+    sessvars.checkedCounter = 0;
+}
+/* </Inbox> */
+
+function CreateDatePicker(targetID, yearRangeStart, yearRangeEnd) {
+    $('#' + targetID).datepicker(
+        {
+            closeText: '',
+            prevText: '&#x3c;Ant',
+            nextText: 'Sig&#x3e;',
+            currentText: '',
+            monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+            monthNamesShort: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+            dayNames: ['Domingo', 'Lunes', 'Martes', 'Mi&eacute;rcoles', 'Jueves', 'Viernes', 'S&aacute;bado'],
+            dayNamesShort: ['Dom', 'Lun', 'Mar', 'Mi&eacute;', 'Juv', 'Vie', 'S&aacute;b'],
+            dayNamesMin: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'S&aacute;'],
+            weekHeader: 'Sm',
+            firstDay: 1,
+            isRTL: false,
+            showMonthAfterYear: false,
+            yearSuffix: '',
+            //showOn: 'both',
+            //buttonImage: '/Images/' + sessvars.Skin + '/calendar.png',
+            //buttonImageOnly: true,
+            dateFormat: 'dd/mm/yy',
+            regional: 'es',
+            changeMonth: true,
+            changeYear: true,
+            showButtonPanel: false,
+            yearRange: '' + yearRangeStart + ':' + yearRangeEnd + ''
+        });
+    $('#' + targetID).mousedown(function () {
+        $('#ui-datepicker-div').toggle();
+        //            this.blur();
+    });
+}
+
+function WindowOpen(url) {
+    window.open(url);
+}
+
+function WindowOpenSite(url, target) {
+    window.open(url, target)
+}
+
+function CenterElement(elem) {
+    var elemDialogH = elem.height();
+    var wheight = $(window).height();
+    var positionV = (wheight / 2) - (elemDialogH / 2);
+    elem.css('top', positionV+'px');
+}
+
+function MsgBox(title, message, disabledCloseButton) {
+    var div = $("#message_box").html(message);
+
+    $(document).GODialog(div, {
+        htmlGetter: function () { },
+        disabledCloseButton: disabledCloseButton,
+        modal: true,
+        width: 400,
+        resizable: false,
+        autoWidth: true,
+        autoHeight: true,
+        title: (title.length > 0) ? title : "Office Banking",
+        displayLoading: false,
+        beforeClose: {},
+        idDialog: "container-msgbox"
+    });
+
+}
+
+function MsgBoxV1(message, paramOptions) {
+
+    var options = {
+        htmlGetter: function () { },
+        modal: true,
+        resizable: false,
+        autoWidth: true,
+        autoHeight: true,
+        title: "Office Banking",
+        displayLoading: false,
+        idDialog: "container-msgbox"
+    };
+
+    if (typeof paramOptions !== 'undefined') {
+        $.extend(options, paramOptions);
+    }
+
+    var div = $("#message_box").html(message);
+
+    $(document).GODialog(div, options);
+
+    
+}
+
+
+
+
+
+function Back(url) {
+    if (typeof url === 'undefined') {
+        history.back();
+    }
+    else {
+        Link(url);
+    }
+}
+
+function goToControllerAction(controller, action) {
+    window.location.href = "/" + controller + "/" + action;
+}
+
+function goToMenuLinkModule(module) {
+    window.location.href = "/Navigation/MenuLink/" + module;
+}
+
+function ShowFAQ() {
+    var div = $("#inmaster_general");
+    //Para que le saque los bordes feos de Jquery
+    div.addClass('ContentIframe');
+
+    $(document).GODialog(div, {
+        title: "Preguntas Frecuentes",
+        htmlGetter: function () {
+            $.ajax({
+                url: '/Home/Faq',
+                dataType: 'html',
+                type: "GET",
+                data: {},
+                success: function (data) {
+                    div.html(data);
+                },
+                error: function (data) { OnAjaxError(data); }
+            });
+        }
+    });
+}
+
+function GetAlertasPendientes() {
+
+    $.ajax({
+        url: '/Users/GetAlertasPendientes',
+        dataType: 'Json',
+        type: "POST",
+        success: function (data) {
+
+            if (data != null) {
+                if (data.OperacionPendienteDeFirma) {
+                    $("#spanAutorizarOperaciones").attr("class", "alerta");
+                }
+
+                if (data.ExportacionPendiente) {
+                    $("#spanDescargaArchivos").attr("class", "alerta");
+                }
+
+                if (data.SolicitudesPendientes) {
+                    $("#spanAdministrarEmpresa").attr("class", "alerta");
+
+                    $('#spanAdministrarEmpresa').GOMsgTooltip(
+                        {
+                            msg: "Solicitudes pendientes de aprobaci&oacute;n",
+                            triggerOnMouseOver: true
+                        }
+                    );
+
+                    //Seteo el menú de Administracion de usuarios
+                    $("#GoRedirectSelectOperators").attr("href", "/Navigation/MenuLink/1213");
+                }
+            }
+        }
+    });
+}
+
+function ValidateRegExOnEvent(evt, regEx) {
+    var charCode = (evt.which) ? evt.which : window.event.keyCode;
+    
+    if (charCode <= 13) {
+        return true;
+    }
+    else {
+        var keyChar = String.fromCharCode(charCode);
+        var re = regEx;
+        return re.test(keyChar);
+    }
+}
+
+function ValidateRegEx(value, regex) {
+    return regex.test(value);
+}
+
+function isFloat(number) {
+    return number % 1 != 0;
+}
+
+function trim(string) {
+    if (string != null) {
+        return string.replace(/^\s+/, '').replace(/\s+$/, '');
+    } else {
+        return "";
+    }
+}
+
+function Empty(string) {
+    if (trim(string).length == 0) {
+        return true;
+    }
+    return false;
+}
+
+function trimSpaces(string) {
+    return string.replace(/\s/g, "");
+}
+
+function trimNonDigits(string) {
+    var result = trimSpaces(string);
+    return result.replace(/\D/g, "");
+}
+
+function RemoveNonNumericCharacters(strFieldId, maxLength) {
+    var stringToAnalize = document.getElementById(strFieldId).value;
+    var auxString = document.getElementById(strFieldId).value;
+
+    for (var i = 0; i < stringToAnalize.length; i++) {
+        var charAux = stringToAnalize.charAt(i);
+        if ((isNaN(parseFloat(charAux)) && !isFinite(charAux)) || charAux == " ") {
+            auxString = auxString.replace(charAux, "");
+        }
+    }
+    document.getElementById(strFieldId).value = auxString.substring(0, maxLength);
+}
+
+function CheckMaxLength(element, maxLength) {
+    /*Chequea que la longitud total de un input ingresado no sea mayor a la establecida
+    Esta funcion es auxiliar para cuando se vuelve de una pagina a otra pagina que tiene watermarks, ya que
+    hacen invalido el comportamiento de los maxlenght establecidos.
+    Como el value del input no se actualiza hasta el final de las evaluaciones, 
+    lo que hacemos es setear un delay para hacer la validacion, y en caso de no
+    pasarla le quitamos el caracter ingresado al numero. El timeout es suficientemente
+    grande para que llegue a actualizarse el valor del campo y suficientemente pequeÃ±o para 
+    que el usuario no llegue a meter otro caracter antes de hacer esta validación*/
+    setTimeout(function () {
+        if (element.value.length > maxLength) {
+            element.value = element.value.substring(0, element.value.length - 1);
+        }
+    }, 3);
+}
+
+function CheckPasteMaxLength(element, maxLength) {
+    /*Chequea que la longitud total de un input que contiene datos que fueron pegados no sea
+    mayor a la establecida.
+    Esta funcion es auxiliar para cuando se vuelve de una pagina a otra pagina que tiene watermarks, ya que
+    hacen invalido el comportamiento de los maxlenght establecidos.
+    Como el value del input no se actualiza hasta el final de las evaluaciones, 
+    lo que hacemos es setear un delay para hacer la validacion, y en caso de no
+    pasarla cortamos el valor del campo a lo maximo permitido.
+    El timeout es suficientemente grande para que llegue a actualizarse el valor y suficientemente pequeño para 
+    que el usuario no llegue a meter otro caracter, o pegar de nuevo, antes de hacer esta validacion*/
+    var valorAnterior = element.value;
+    setTimeout(function () {
+        if (element.value.length > maxLength) {
+            element.value = element.value.substring(0, maxLength - 1);
+        }
+    }, 3);
+}
+
+function CheckNumericAndMaxLenght(element, MaxLenght) {
+    /*Esta funcion es auxiliar para cuando se vuelve de confirmar ya que los watermarks 
+    hacen invalido el comportamiento de los maxlenght establecidos.*/
+    //Chequea q el caracter ingresado sea un numero
+    if (event.keyCode < 48 || event.keyCode > 57) {
+        event.returnValue = false;
+    }
+    //Chequea que la longitud total con el nuevo caracter ingresado no sea mayor a la establecida
+    CheckMaxLength(element, MaxLenght);
+}
+
+function ValidateEmail(email) {
+    var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+    return reg.test(email);
+}
+
+function SelectAll(id) {
+    try {
+        document.getElementById(id).focus();
+        document.getElementById(id).select();
+    }
+    catch (e) {
+        //Si hay error es porque no es un elemento seleccionable, como un combo, puede pasar.
+    }
+}
+
+function validateNifOnKeyUp(id) {
+
+    var strg = document.getElementById(id).value;
+    var charAux = strg.charAt(strg.length - 1);
+
+    return ValidateRegEx(charAux, regEx_transfExtNif);
+
+    //var bool = ValidateRegEx(charAux, regEx_transfExtNif);
+
+    //if (bool)
+    //    document.getElementById(id).value = strg;
+    //else
+    //    document.getElementById(id).value = strg.substring(0, strg.length - 1);
+}
+
+//Paste n Blur
+function validateNifOnPaste(id, length) {
+
+    var strg = document.getElementById(id).value;
+    var strgAux = document.getElementById(id).value;
+
+    for (var i = 0; i < strg.length; i++) {
+        var charAux = strg.charAt(i);
+        if (!ValidateRegEx(charAux, regEx_transfExtNif)) {
+            strgAux = strgAux.replace(charAux, "");
+        }
+    }
+
+    if (strgAux.length > length || strgAux != strg)
+        document.getElementById(id).value = strgAux.substring(0, length);
+
+}
+
+function validateTrxExt(id) {
+
+    var strg = document.getElementById(id).value;
+    var charAux = strg.charAt(strg.length - 1);
+
+    return ValidateRegEx(charAux, regEx_transfExt);
+
+    var bool = ValidateRegEx(charAux, regEx_transfExt);
+
+    if (bool)
+        document.getElementById(id).value = strg;
+    else
+        document.getElementById(id).value = strg.substring(0, strg.length - 1);
+}
+
+//Paste n Blur
+function validateTrxExtOnPaste(id, length) {
+
+    var strg = document.getElementById(id).value;
+    var strgAux = document.getElementById(id).value;
+
+    for (var i = 0; i < strg.length; i++) {
+        var charAux = strg.charAt(i);
+        if (!ValidateRegEx(charAux, regEx_transfExt)) {
+            strgAux = strgAux.replace(charAux, "");
+        }
+    }
+
+    if (strgAux.length > length || strgAux != strg)
+        document.getElementById(id).value = strgAux.substring(0, length);
+
+}
+
+function validateNumbers(id, length) {
+
+    var strg = document.getElementById(id).value;
+    var strgAux = document.getElementById(id).value;
+
+    for (var i = 0; i < strg.length; i++) {
+        var charAux = strg.charAt(i);
+        if (!ValidateRegEx(charAux, regEx_numbersTRX)) {
+            strgAux = strgAux.replace(charAux, "");
+        }
+    }
+
+    if (strgAux.length > length || strgAux != strg)
+        document.getElementById(id).value = strgAux.substring(0, length);
+
+}
+
+function validateAliasCBU(id) {
+
+    var alias = document.getElementById(id).value;
+    var charAux = alias.charAt(alias.length - 1);
+
+    return ValidateRegEx(charAux, regEx_Alias);
+    
+    //$("#" + id).keypress(function (e) {
+    //    if ((e.keyCode >= 97 && e.keyCode <= 122) || //letters
+    //        (e.keyCode >= 65 && e.keyCode <= 90) ||  //capital letters
+    //        (e.keyCode >= 45 && e.keyCode <= 46) ||  // - and .
+    //        (e.keyCode >= 48 && e.keyCode <= 57)     //numbers
+    //        ) {
+    //        return true;
+    //    }
+    //    return false;
+    //});
+}
+
+
+
+function validateCaracters(id) {
+
+    var comment = document.getElementById(id).value;
+    var commentAux = document.getElementById(id).value;
+
+    for (var i = 0; i < comment.length; i++) {
+        var charAux = comment.charAt(i);
+        if (!ValidateRegEx(charAux, regEx_InternalComment)) {
+            commentAux = commentAux.replace(charAux, "");
+        }
+    }
+    document.getElementById(id).value = commentAux;
+}
+
+//Used in: "onPaste"
+function validateAliasCBUOnKeyUp(id) {
+
+    var alias = document.getElementById(id).value;
+    var aliasAux = document.getElementById(id).value;
+
+    for (var i = 0; i < alias.length; i++) {
+        var charAux = alias.charAt(i);
+        if (!ValidateRegEx(charAux, regEx_Alias)) {
+            aliasAux = aliasAux.replace(charAux, "");
+        }
+    }
+
+    if (aliasAux.length > 20 || aliasAux != alias)
+        document.getElementById(id).value = aliasAux.substring(0, 20);
+}
+
+//Used in onPaste. Evaluates char by char and removes those whichs aren't valids
+function validateInputOnPaste(id, regEx, maxLength) {
+
+    //Use a timeout so the paste is made getting de value of the input, without timeout we get an empty string.
+    setTimeout(function () {
+
+        var input = document.getElementById(id).value;
+        var inputAux = document.getElementById(id).value;
+
+        for (var i = 0; i < input.length; i++) {
+            var charAux = input.charAt(i);
+            if (!ValidateRegEx(charAux, regEx)) {
+                inputAux = inputAux.replace(charAux, "");
+            }
+        }
+
+        //if you declared a max length
+        if (typeof maxLength !== 'undefined' && maxLength != null) {
+            maxLength = parseInt(maxLength, 10); //parseamos el numero a base 10, ya que lo trae en base 8 por defecto
+            if (inputAux.length > maxLength || inputAux != input)
+                document.getElementById(id).value = inputAux.substring(0, maxLength);
+        } else {
+            document.getElementById(id).value = inputAux;
+        }
+
+    }, 500);
+
+}
+//*********************************************************************
+//Funciones Exclusivas Tranferencias Multiples y Pago Proveedores
+//*********************************************************************
+function validAmount(anAmount) {
+    var importe = trimNonDigits(anAmount.toString());
+    var re1ndigit = /[1-9]{1,}/;
+    if (importe.search(re1ndigit) == -1) {
+        return false;
+    }
+    return true;
+}
+
+function CheckAccounts(strIdField) {
+    if (document.getElementById(strIdField).value == "") {
+        ShowInputError(strIdField, "Por favor, seleccione una cuenta a debitar.");
+        return false;
+    }
+    return true;
+}
+
+function ShowNotificationData() {
+    if (document.getElementById("NotificationType").value == "1" || document.getElementById("NotificationType").value == "EMAIL") {
+        document.getElementById("correoDiv").style.display = '';
+        document.getElementById("smsDiv").style.display = 'none';
+    }
+    else {
+        document.getElementById("smsDiv").style.display = '';
+        document.getElementById("correoDiv").style.display = 'none';
+    }
+}
+//*********************************************************************
+//FIN - Funciones Exclusivas Tranferencias Multiples y Pago Proveedores
+//*********************************************************************
+
+function GORegisterInteraction(id) {
+    var request = $.ajax({
+        type: "POST",
+        url: "/Users/GORegisterInteraction/",
+        //dataType: "json",
+        data: { moduleId: id }
+    });
+}
+
+function BackToTransactionList() {
+    Link('/Transaction/ListFromExternal');
+}
+
+function ShowLoading() {
+    //Oculto el menú
+    $(".cont-menu").hide();
+    //Muestro el loading
+    $("#loading_box").show();
+}
+
+function HideLoading() {
+    //Muestro el menú
+    $(".cont-menu").show();
+    //Oculto el loading
+    $("#loading_box").hide();
+}
+
+function isLocationComplete(e, postCodeId) {
+    if (e.keyCode != 13 && e.keyCode != 27 && e.keyCode != 8 && e.keyCode != 46) //Distinto de enter o scape o backspace o supr
+    {
+        changeLocation(postCodeId);
+    }
+}
+
+function changeLocation(postCodeId) {
+    try {
+        document.body.style.cursor = "wait";
+
+        var codePost = trim(document.getElementById(postCodeId).value);
+
+        try {
+            if (codePost != "" && codePost.length == 4) {
+                if (typeof onSelectedLocation === 'undefined') {
+                    throw "No se creó la función 'onSelectedLocation', necesaria para utilizar esta partial.";
+                }
+
+                if (typeof $("#locationsDiv").lenght == 0) {
+                    throw "No se creó el div 'locationsDiv', necesario para contener la tabla de localidades.";
+                }
+
+                $('#locationsDiv').show();
+                //$( '#locationsDiv' ).css("display", "inline-block");
+
+                //Si ya existe no lo vuelvo a crear
+                var locationsDivLoading = $('#locationsDivLoading');
+                if (locationsDivLoading.length == 0) {
+                    locationsDivLoading = $("<span id='locationsDivLoading'><span class='loading-small'></span></span>");
+                }
+                locationsDivLoading.insertAfter($('#' + postCodeId));
+
+                $.ajax({
+                    url: '/Utils/GetLocations',
+                    dataType: 'html',
+                    type: "POST",
+                    data: { codePost: codePost },
+                    success: function (data) {
+                        if (IsAjaxError(data)) {
+                            OnAjaxError(data);
+                            $('#locationsDiv').html("");
+                            locationsDivLoading.remove();
+                        }
+                        else {
+                            $('#locationsDiv').html(data);
+                            locationsDivLoading.remove();
+                            pickLocationIfOnlyOne();
+                        }
+                    },
+                    error: function (data) {
+                        OnAjaxError(data);
+                        $('#locationsDiv').html("");
+                    }
+                });
+            } else {
+                clearLocation();
+            }
+        }
+        catch (e) {
+            OnJsError(e);
+        }
+
+        document.body.style.cursor = "default";
+    }
+    catch (e) {
+        document.body.style.cursor = "default";
+        OnJsError(e.message);
+    }
+}
+
+//*********************************************************************
+//FIN - Funciones Exclusivas Mensajes en tooltips
+//*********************************************************************
+//*********************************************************************
+//Funciones Exclusivas Títulos Colapsables
+//*********************************************************************
+//Cambia el estilo del header principal
+function collapseOrUncollapseForm(title, content) {
+    var titleJQueryzed = $(title);
+    if (titleJQueryzed.attr('class').indexOf("on") != -1) {
+        collapseTitle(title, content);
+    } else {
+        uncollapseTitle(title, content);
+    }
+}
+function uncollapseTitle(title, content) {
+    var titleJQueryzed = $(title);
+    var contentJQueryzed = $(content);
+    contentJQueryzed.show();
+    titleJQueryzed.addClass('on');
+}
+function collapseTitle(title, content) {
+    var titleJQueryzed = $(title);
+    var contentJQueryzed = $(content);
+    contentJQueryzed.hide();
+    titleJQueryzed.removeClass('on');
+}
+//*********************************************************************
+//FIN - Funciones Exclusivas Títulos Colapsables
+//*********************************************************************
+// FUNCION STANDARD PARA MOSTRAR UN TOOLTIP
+function ShowStandardTooltip(element, msg) {
+    if (trim(msg) != "") {
+        $(element).GOMsgTooltip(
+            {
+                msg: msg,
+                triggerOnMouseOver: true
+            }
+        );
+    }
+}
+
+// FUNCION STANDARD PARA MOSTRAR UN TOOLTIP ON FOCUS
+function ShowStandardTooltipOnFocus(id, msg) {
+    if (trim(msg) != "") {
+        $("#" + id).GOMsgTooltip(
+            {
+                msg: msg,
+                triggerOnFocus: true
+            }
+        );
+    }
+}
+
+// FUNCION STANDARD PARA MOSTRAR UN ERROR EN UN INPUT - SOLO PARA CASOS SUPER NORMALES (por ejemplo NO sirve para datepickers, ni para campos que deben ocultar el mensaje con el focus en el target, etc)
+function ShowInputError(id, msg) {
+    SelectAll(id);
+    $('#' + id).GOMsgTooltip(
+        {
+            msg: msg,
+            showPermanentlyUntilChange: true,
+            type: 'error'
+        }
+    );
+}
+
+// FUNCION STANDARD PARA MOSTRAR UN ERROR EN UN INPUT - ALINEADO A LA IZQUIERDA
+function ShowInputErrorLeft(id, msg) {
+    SelectAll(id);
+    $('#' + id).GOMsgTooltip(
+        {
+            msg: msg,
+            showPermanentlyUntilChange: true,
+            type: 'error',
+            haveToGoRight: true
+        }
+    );
+}
+
+function ShowInputErrorOnDialog(id, msg) {
+    SelectAll(id);
+    $('#' + id).GOMsgTooltip(
+        {
+            msg: msg,
+            showPermanentlyUntilChange: true,
+            type: 'error',
+            isOnDialog: true
+        }
+    );
+}
+
+//Funcion que valida el email
+function isRFC822ValidEmail(sEmail) {
+
+    var emailToValidate = '';
+    if (sEmail != '') {
+        emailToValidate = trim(sEmail);
+    }
+
+    var sQtext = '[^\\x0d\\x22\\x5c\\x80-\\xff]';
+    var sDtext = '[^\\x0d\\x5b-\\x5d\\x80-\\xff]';
+    var sAtom = '[^\\x00-\\x20\\x22\\x28\\x29\\x2c\\x2e\\x3a-\\x3c\\x3e\\x40\\x5b-\\x5d\\x7f-\\xff]+';
+    var sQuotedPair = '\\x5c[\\x00-\\x7f]';
+    var sDomainLiteral = '\\x5b(' + sDtext + '|' + sQuotedPair + ')*\\x5d';
+    var sQuotedString = '\\x22(' + sQtext + '|' + sQuotedPair + ')*\\x22';
+    var sDomain_ref = sAtom;
+    var sSubDomain = '(' + sDomain_ref + '|' + sDomainLiteral + ')';
+    var sWord = '(' + sAtom + '|' + sQuotedString + ')';
+    var sDomain = sSubDomain + '(\\x2e' + sSubDomain + ')*';
+    var sLocalPart = sWord + '(\\x2e' + sWord + ')*';
+    var sAddrSpec = sLocalPart + '\\x40' + sDomain; // complete RFC822 email address spec
+    var sValidEmail = '^' + sAddrSpec + '$'; // as whole string
+
+    var reValidEmail = new RegExp(sValidEmail);
+
+    if (reValidEmail.test(emailToValidate)) {
+        return true;
+    }
+
+    return false;
+}
+
+//Funcion Compartida Confirmacion y Validacion Emails
+function ConfirmAndValidateEmail(idInputEmail, idInputConfirmEmail) {
+
+    if (trim(document.getElementById(idInputEmail).value) == "" || (ValidateRegEx($("#" + idInputEmail).val(), regEx_mail_1) == false && ValidateRegEx($("#" + idInputEmail).val(), regEx_mail_2) == false)) {
+        ShowInputError(idInputEmail, "Ingrese un correo electr&oacute;nico v&aacute;lido");
+        $("#" + idInputConfirmEmail).val("");
+        return false;
+    }
+    else if ($("#" + idInputEmail).val() != $("#" + idInputConfirmEmail).val()) {
+        ShowInputError(idInputConfirmEmail, "Las direcciones de correo electr&oacute;nico no coinciden");
+        return false;
+    }
+
+    return true;
+}
+//FIN _ Funcion Compartida Confirmacion y Validacion Emails
+
+//Funcion Compartida para validar cambio de password
+function PasswordComplexValidation(idInputUserPassword1, idInputUserPassword2) {
+    var msgdistintos = "Las Claves de Acceso ingresadas son distintas";
+    var msglongitud = "La clave de acceso ingresada debe tener entre 8 y 15 caracteres de longitud";
+    var msgespacios = "Las passwords ingresadas no deben contener espacios";
+    var msgvacio = "Debe completar la Clave de Acceso en ambos cuadros de texto";
+
+    var pass1 = document.getElementById(idInputUserPassword1).value;
+    var pass2 = document.getElementById(idInputUserPassword2).value;
+
+    if (pass1.length > 4 && pass2.length < 1) {
+        MsgBoxV1(msgvacio);
+        return false;
+    }
+
+    if (pass1.length < 1 && pass2.length > 4) {
+        MsgBoxV1(msgvacio);
+        return false;
+    }
+
+    if (pass1.length < 1 || pass2.length < 1) {
+        MsgBoxV1(msgvacio);
+        return false;
+    }
+
+    if (pass1.length == 0 || pass2.length == 0) {
+        MsgBoxV1(msgvacio);
+        return false;
+    }
+
+    if (pass1.length < 8 || pass2.length < 8) {
+        MsgBoxV1(msglongitud);
+        return false;
+    }
+    if (pass1.length > 15 || pass2.length > 15) {
+        MsgBoxV1(msglongitud);
+        return false;
+    }
+    if (pass2 != pass1) {
+        MsgBoxV1(msgdistintos);
+        return false;
+    }
+
+    //Si contiene espacios al comienzo o al final no es válido
+    if ($.trim(pass1).length != pass1.length) {
+        MsgBoxV1(msgespacios);
+        return false;
+    }
+
+    //Debe contener al menos 3 de los siguientes...
+    var cantidadValidacionesOk = 0;
+    //Tiene numeros
+    if (pass1.match("[0-9]")) {
+        cantidadValidacionesOk++;
+    }
+
+    //Tiene mayus
+    if (pass1.match("[A-Z]")) {
+        cantidadValidacionesOk++;
+    }
+
+    //Tiene minus
+    if (pass1.match("[a-z]")) {
+        cantidadValidacionesOk++;
+    }
+
+    //Contiene especiales
+    if (pass1.match("[^\\w]")) {
+        cantidadValidacionesOk++;
+    }
+
+    //No Contiene 3 consecutivos
+    if (!pass1.match("(.)\\1\\1")) {
+        cantidadValidacionesOk++;
+    }
+
+    if (cantidadValidacionesOk < 3) {
+        MsgBoxV1("La clave ingresada debe contemplar al menos 3 de los siguientes atributos:\n -  Caracteres especiales (#$%, etc).\n -  Letras may&uacute;sculas. \n -  Letras min&uacute;sculas. \n -  N&uacute;meros.\n -  No contener m&aacute;s de dos caracteres  alfanum&eacute;ricos, iguales y consecutivos.");
+        return false;
+    }
+
+    return true;
+}
+//FIN _ Funcion Compartida para validar cambio de password
+
+//Función que valida el cuil/cuit
+function CuitCuilValidation(cuit) {
+    var mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    var total = 0;
+
+    for (var i = 0; i < mult.length; i++) {
+        total += parseInt(cuit.charAt(i), 10) * mult[i];
+    }
+
+    var mod = total % 11;
+    var digitoVerificador = mod == 0 ? 0 : mod == 1 ? 9 : 11 - mod;
+
+    ///obtengo el último dígito del cuit
+    var valor = parseInt(cuit.slice(10, 11), 10);
+
+    if (digitoVerificador != valor) {
+        MsgBox("", "El n&uacute;mero de CUIT de la empresa que desea adherir es inv&aacute;lido", false);
+        return false;
+    }
+
+    return true;
+}
+
+function CuitCuilCDIValidation(cuit) {
+    var mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    var total = 0;
+
+    for (var i = 0; i < mult.length; i++) {
+        total += parseInt(cuit.charAt(i), 10) * mult[i];
+    }
+
+    var mod = total % 11;
+    var digitoVerificador = mod == 0 ? 0 : mod == 1 ? 9 : 11 - mod;
+
+    ///obtengo el último dígito del cuit
+    var valor = parseInt(cuit.slice(10, 11), 10);
+
+    if (digitoVerificador != valor) {
+        MsgBox("", "El n&uacute;mero de CUIT / CUIL / CDI es inv&aacute;lido", false);
+        return false;
+    }
+
+    return true;
+}
+//FIN_ Función que valida el cuil/cuit
+
+// funcion igual a CuitCuilCDIValidation(cuit) pero sin devolver el message box
+function CuitCuilCDIValidationV2(cuit) {
+    var mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    var total = 0;
+
+    for (var i = 0; i < mult.length; i++) {
+        total += parseInt(cuit.charAt(i), 10) * mult[i];
+    }
+
+    var mod = total % 11;
+    var digitoVerificador = mod == 0 ? 0 : mod == 1 ? 9 : 11 - mod;
+
+    ///obtengo el último dígito del cuit
+    var valor = parseInt(cuit.slice(10, 11), 10);
+
+    if (digitoVerificador != valor) {
+        return false;
+    }
+    return true;
+}
+//FIN_
+function validateEmail(email) {
+    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+}
+
+//Uso de agenda CBU...
+function LoadModify(data) {
+
+    document.getElementById('Desc').value = data.Contacto.Alias;
+    document.getElementById('Moneda').value = data.Contacto.MonedaCuenta;
+
+    if (data.Contacto.AliasCBU == "N") {
+        document.getElementById('CBUBanco').value = data.Contacto.CBUCuentaBco;
+        document.getElementById('CBUCuenta').value = data.Contacto.CBUCuenta;
+    }
+
+    document.getElementById('EsTitular').checked = data.Contacto.EsTitular;
+    document.getElementById('TipoContacto').value = data.Contacto.Compartido;
+    document.getElementById('NombreBenef').value = data.Contacto.NombreBeneficiario;
+    document.getElementById('Contacto.TipoDocumento').value = data.Contacto.TipoDocumento;
+    document.getElementById('NumDoc').value = data.Contacto.NumeroDocumento;
+    document.getElementById('Mail').value = data.Contacto.Correo;
+    document.getElementById('Contacto.CelularEmpresa').value = data.Contacto.CelularEmpresa;
+    document.getElementById('Contacto.CelularCodigoArea').value = data.Contacto.CelularCodigoArea;
+    document.getElementById('Contacto.CelularNumero').value = data.Contacto.CelularNumero;
+
+    if (document.getElementById('listaEmails') != null) {
+        if (document.getElementById('listaEmails').value != "") {
+            //    if (data.Contacto.Emails.length > 0) {
+
+            //        var correos = data.Contacto.Emails.length + "\\";
+            //        for (var i = 0; i < data.Contacto.Emails.length; i++) {
+            //            correos += data.Contacto.Emails[i].Email + "|" + data.Contacto.Emails[i].IsDefault + "/";
+            //            addToEmailCollection(data.Contacto.Emails[i].IsDefault, data.Contacto.Emails[i].Email);
+            //        }
+            //        document.getElementById('listaEmails').value = correos;
+            //    } else {
+            //        addToEmailCollection(true, "");
+            //    }
+            //} else {
+            var correos = document.getElementById('listaEmails').value;
+            if (typeof EmailDataTable !== "undefined" && typeof EmailDataTable.Email !== "undefined") {
+                LimpiarTabla();
+            }
+            var cantEmail = correos.split('\\');
+            var emails = cantEmail[1].split('/');
+
+            for (var i = 0; i < cantEmail[0]; i++) {
+                if (emails[i] != null && emails[i] != "")
+                    addToEmailCollection((emails[i].split('|')[1] == "True") ? true : (emails[i].split('|')[1] == "true") ? true : false, trim(emails[i].split('|')[0]));
+            }
+        }
+        reloadEmailsTable();
+        UpdateTableAligns();
+    }
+
+    var title = document.getElementById('ui-id-1').firstChild;
+    title.data = "Modificaci\u00F3n contacto Agenda CBU";
+    //$('#Guardar').attr('onclick', '');
+    //$('#Guardar').unbind('click');
+
+    var newclick = new Function('IsReadyForSubmitModify()');
+    // clears onclick then sets click using jQuery
+    $("#Guardar").attr('onclick', '').click(newclick);
+
+    document.getElementById('idAgendaPopUp').value = data.idAgenda;
+    $("#message_box").dialog("close");
+}
+
+function ShowAgendaCBUContactoPartial(moneda, cbuBanco, cbuCuenta, nom, mail, nroDoc, tipoDoc, propia, codigoMoneda, codigoSubsistema, cuenta, listaEmails, aliasCBU) {
+    
+    var data = SearchContact(nroDoc, cbuBanco, cbuCuenta, codigoMoneda, codigoSubsistema, cuenta, aliasCBU)
+    if (data.idAgenda == '') {
+        nroDoc = trim(data.Contacto.NumeroDocumento);
+        tipoDoc = trim(data.Contacto.TipoDocumento);
+        ShowPopUpAgenda(moneda, cbuBanco, cbuCuenta, nom, mail, nroDoc, tipoDoc, propia, listaEmails, data.idAgenda, aliasCBU)
+    }
+    else {
+        var options = {
+            GOButtons: [
+                                { text: "Aceptar", click: function () { ShowPopUpAgenda('', '', '', '', '', '', '', '', listaEmails, data.idAgenda, aliasCBU); LoadModify(data) } },
+                                { text: "Cancelar", click: function () { $("#message_box").dialog("close"); } }
+            ]
+        };
+        MsgBoxV1("Ya existe un contacto registrado para el CBU / CVU ingresado. &iquest;Desea visualizar los datos para modificarlos?", options);
+    }
+}
+
+function GetContactDataAndShowPartial() {
+    
+    var alias = document.getElementById('aliasCBU').value;
+    var moneda = document.getElementById('contactMoneda').value;
+    var cbuBanco = document.getElementById('contactCBUBanco').value;
+    var cbuCuenta = document.getElementById('contactCBUCuenta').value;
+    var nom = document.getElementById('contactNombre').value;
+    var mail = document.getElementById('contactMail').value;
+    var nroDoc = document.getElementById('contactNumDoc').value;
+    var tipoDoc = document.getElementById('contactTipoDoc').value;
+    var propia = false;
+    var cuenta = '';
+    var monedaCta = '';
+    var subsisCta = '';
+    if (document.getElementById('contactPropia') != null)
+        propia = document.getElementById('contactPropia').value;
+    if (document.getElementById('contactCuenta') != null) {
+
+        cuenta = document.getElementById('contactCuenta').value;
+        monedaCta = document.getElementById('contactCtaMoneda').value;
+        subsisCta = document.getElementById('contactSubsistema').value;
+    }
+
+    var listaEmails = "";
+    if (document.getElementById('listaEmails') != null && document.getElementById('listaEmails').value != "") {
+        listaEmails = document.getElementById('listaEmails').value;
+    }
+    
+    ShowAgendaCBUContactoPartial(moneda, cbuBanco, cbuCuenta, nom, mail, nroDoc, tipoDoc, propia, monedaCta, subsisCta, cuenta, listaEmails, alias);
+}
+
+function SearchContact(nroDoc, cbuBanco, cbuCuenta, codigoMoneda, codigoSubsistema, cuenta, aliasCBU) {
+    var jsonParse = [];
+    var result;
+    $.ajax({
+        url: '/Administracion/BuscarContacto',
+        dataType: 'json',
+        async: false,
+        type: "POST",
+        data: {
+            cbuBanco: cbuBanco
+				      , cbuCuenta: cbuCuenta
+                      , numDoc: nroDoc
+                      , codMoneda: codigoMoneda
+                      , codSubsistema: codigoSubsistema
+                      , cuenta: cuenta
+                      , aliasCBU: aliasCBU
+        },
+        success: function (data) {
+            result = data;
+        },
+        error: function (data) {
+            OnAjaxError(data);
+        }
+    });
+    return result;
+}
+
+function ShowPopUpAgenda(moneda, cbuBanco, cbuCuenta, nom, mail, nroDoc, tipoDoc, propia, listaEmails, idAgenda, aliasCBU) {
+    var div = document.getElementById("inmaster_inbox");
+    var options =
+	      {
+	          htmlGetter: function () {
+	              $.ajax({
+	                  url: '/Administracion/ShowNuevoContactoPartial',
+	                  dataType: 'html',
+	                  async: false,
+	                  type: "POST",
+	                  data: {
+	                      moneda: moneda
+				      , cbuBanco: cbuBanco
+				      , cbuCuenta: cbuCuenta
+				      , nom: nom
+				      , mail: mail
+                      , nroDoc: nroDoc
+                      , tipoDoc: tipoDoc
+                      , propia: propia
+                      , listaEmails: listaEmails
+                      , aliasCBU: aliasCBU
+	                  },
+	                  success: function (data) {
+	                      $(div).html(data);
+	                  },
+	                  error: function (data) {
+	                      OnAjaxError(data);
+	                  }
+	              });
+	              displayLoading: true;
+	          },
+	          width: 715,
+	          title: "Alta en Agenda de contactos",
+	          idDialog: "container-cbu"
+	      };
+
+    $(document).GODialog(div, options);
+
+    var agendaScroll = document.getElementById('container-cbu')
+
+    if (window.innerHeight > 670) {
+        agendaScroll.style.overflow = "hidden";
+    }
+
+    else {
+        agendaScroll.style.overflowX = "hidden";
+        agendaScroll.style.overflowY = "scroll";
+        agendaScroll.style.maxHeight = "90%";
+    }
+
+    //Si listaEmails == "" ==> Se esta usando el metodo sms
+
+    if (typeof EmailDataTable !== "undefined" && typeof EmailDataTable.Email !== "undefined") {
+        LimpiarTabla();
+    }
+
+    var correos = ""; var dataToSave = "";
+
+    if (listaEmails != null && listaEmails != "") {
+        correos = listaEmails;
+    }
+    else if (document.getElementById('listaEmails') != null && document.getElementById('listaEmails').value != "") {
+        correos = document.getElementById('listaEmails').value;
+    }
+    else {
+        $.ajax({
+            url: '/ThirdPartiesPaymentTransferences/ObtenerMailsContacto',
+            dataType: 'JSON',
+            type: "POST",
+            async: false,
+            data: { IDAgenda: idAgenda },
+            success: function (data) {
+                dataToSave = data.CantidadEmails + "\\";
+                for (var i = 0; i < data.CantidadEmails; i++) {
+                    dataToSave += data.ListaEmails[i].Email + "|" + data.ListaEmails[i].IsDefault + "/";
+                }
+                if (document.getElementById('listaEmails') != null) document.getElementById('listaEmails').value = dataToSave;
+                correos = dataToSave;
+            },
+            error: function (data) { OnAjaxError(data); }//POP UP de "usted podría estar experimentando un mal funcionamiento...."
+        });
+    }
+
+    if (correos != "" && correos != "0\\") {
+        var cantEmail = correos.split('\\');
+        var emails = cantEmail[1].split('/');
+
+        for (var i = 0; i < cantEmail[0]; i++) {
+            if (emails[i] != null && emails[i] != "")
+                addToEmailCollection((emails[i].split('|')[1] == "True") ? true : (emails[i].split('|')[1] == "true") ? true : false, trim(emails[i].split('|')[0]));
+        }
+        reloadEmailsTable();
+        UpdateTableAligns();
+    }
+
+    if (typeof EmailDataTable !== "undefined" && typeof EmailDataTable.Email !== "undefined") {
+        if (EmailDataTable.Email.length == 0) {
+            addToEmailCollection(true, "");
+            reloadEmailsTable();
+            UpdateTableAligns();
+        }
+    }
+    else {
+        addToEmailCollection(true, "");
+        reloadEmailsTable();
+        UpdateTableAligns();
+    }
+
+    if (document.getElementById('listaEmails') != null && document.getElementById('listaEmails') != "") {
+        document.getElementById('listaEmails').value = "";
+    }
+}
+
+function CUILEsValido(cuit) {
+    if (cuit.length != 11) {
+        return false;
+    }
+
+    var mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    var total = 0;
+
+    for (var i = 0; i < mult.length; i++) {
+        total += parseInt(cuit.charAt(i), 10) * mult[i];
+    }
+
+    var mod = total % 11;
+    var digitoVerificador = mod == 0 ? 0 : mod == 1 ? 9 : 11 - mod;
+
+    ///obtengo el último dígito del cuit
+    var valor = parseInt(cuit.slice(10, 11), 10);
+
+    if (digitoVerificador != valor) {
+        return false;
+    }
+    return true;
+}
+
+function preparePageAndPrint() {
+    $("navbar-top").addClass("dontprint");
+    $("aside").addClass("dontprint");
+    $("footer").addClass("dontprint");
+    $("form-box span1").addClass("dontprint");
+    document.getElementById('bannerTopImage').style.visibility = 'hidden';
+
+    window.print();
+
+    $("navbar-top").removeClass("dontprint");
+    $("aside").removeClass("dontprint");
+    $("footer").removeClass("dontprint");
+    $("form-box span1").removeClass("dontprint");
+    document.getElementById('bannerTopImage').style.visibility = 'visible';
+}
+
+function isDefined(o) {
+    return typeof (o) !== 'undefined';
+}
+
+/*Customer Effort Coremetrics*/
+function digitalAnalyticsElementTagCustomerEffort(tagType, descriptionTag, tagContent) {
+    if (tagContent === "" || !isDefined(tagContent))
+        return;
+
+    //FIX PARA CUSTOMER EFFORCE
+    //SACAR LUEGO DE IMPLEMENTADO EL NUGET SITE.CORE 2.0.10
+    var customerEffortIsAdmin = "";
+
+
+    if (isDefined(descriptionTag) && descriptionTag != "")
+        cmCreateElementTag(tagType, descriptionTag, tagContent + "-_-" + customerEffortHeader + "-_-" + customerEffortSegment + "-_-" + customerEffortIdHost + "-_-" + customerEffortNumeroUsuario + "-_-" + customerEffortCodigoModulo + "-_-" + customerEffortIsAdmin);
+}
+/***Fin Customer Effort***/
+
+
+function Trim(sText){
+	return sText.replace(/(\s+$)|(^\s+)/g, "");
+}
+
+function LTrim(sText){
+	return sText.replace(/^\s+/g, "");
+}
+
+function RTrim(sText){
+	return sText.replace(/\s+$/g, "");
+}
+
+//Toma una cantidad determinada (lo determina el parametro iLen)de caracteres de una cadena de texto empezando de derecha a izquierda
+function Right(sString, iLen){
+	if(iLen>sString.length)iLen=sString.length;
+	if(iLen<0)iLen=0;
+	return(sString.substring(sString.length-iLen, sString.length));
+}
+
+//Toma una cantidad determinada (lo determina el parametro iLen)de caracteres de una cadena de texto empezando de izquierda a derecha
+function Left(sString, iLen){
+	if(iLen>sString.length)iLen=sString.length;
+	if(iLen<0)iLen=0;
+	return(sString.substring(0,iLen));
+}
+
+//Funciones para validar una fecha
+function IsDate(iYear, iMonth, iDay) {
+    iYear = parseInt(iYear);
+
+	if (iDay.length == 2){
+		if (iDay.substr(0,1)==0){
+			iDay = Right(iDay,1);
+		}
+	}
+	
+	if (iMonth.length == 2){
+		if (iMonth.substr(0,1)==0){
+			iMonth = Right(iMonth,1);
+		}
+	}
+ 
+    if (isNaN(iYear) || iYear < 1900 || iYear > 2100)
+    return false;
+    iMonth = parseInt(iMonth);
+    if (isNaN(iMonth) || iMonth < 1 || iMonth > 12)
+    return false;
+    var iLastDay = GetDaysInMonth(iYear, iMonth);
+    iDay = parseInt(iDay);
+    return (iDay > 0 && iDay <= iLastDay && !isNaN(iDay))
+}     
+
+function GetDaysInMonth(iYear, iMonth) {
+    if (iMonth == 1 || iMonth == 3 || iMonth == 5 || iMonth == 7 ||
+        iMonth == 8 || iMonth == 10 || iMonth == 12)
+    return 31;
+    else if (iMonth == 4 || iMonth == 6 || iMonth == 9 || iMonth == 11)
+    return 30;
+    else if (iMonth == 2)
+    if (IsLeapYear(iYear))
+        return 29;
+    else
+        return 28;
+    return 0;
+}
+//--------------------------------
+// Verifica si un ano es bisiesto
+//--------------------------------
+function IsLeapYear(iYear) {
+    if (iYear % 4 == 0 && iYear % 100 != 0 || iYear % 400 == 0)
+    return true;
+    else
+    return false;
+}
+//Fin de funciones para validar una fecha
+
+function NumberFormat_WithLatinSeparators (nNmb){
+    var sRes = ""; 
+    for (var j, i = nNmb.length - 1, j = 0; i >= 0; i--, j++) 
+        sRes = nNmb.charAt(i) + ((j > 0) && (j % 3 == 0)? ".": "") + sRes; 
+    return sRes; 
+}
+
+function FormatDate(iYear, iMonth, iDay, sFormat) {
+    if (IsDate(iYear, iMonth, iDay))
+    switch (sFormat.toLowerCase()) {
+    case "dd/mm/yyyy":
+        return LPad(iDay, 2, "0") + "/" + LPad(iMonth, 2, "0") + "/" + LPad(iYear, 4, "0");
+    case "mm/dd/yyyy":
+        return LPad(iMonth, 2, "0") + "/" + LPad(iDay, 2, "0") + "/" + LPad(iYear, 4, "0");
+    case "mmm-yyyy":
+        return MonthName(iMonth) + "-" + LPad(iYear, 4, "0");
+    default:
+        return LPad(iYear, 4, "0") + "-" + LPad(iMonth, 2, "0") + "-" + LPad(iDay, 2, "0");
+    }
+    return "";
+}
+
+function LPad(str, len, ch) {
+    str += '';	// convert to string for sure
+    var slen = str.length;
+    for (var i=0; i<len-slen; i++) {
+        str = ch+str;
+    }
+    return str;
+}
+
+function roundNumber(rnum, rlength) { // Arguments: number to round, number of decimal places
+  return Math.round(rnum*Math.pow(10,rlength))/Math.pow(10,rlength);
+}
+
+/* muestra modal indicando que el navegador no es valido */
+function CheckVersionIE() {
+
+    //VERIFICA QUE LA VERSION DE IE ES >=10
+    //SINO MUESTRA MODAL CON MENSAJE
+            
+        var ua = window.navigator.userAgent;
+        var msie = ua.indexOf('MSIE ');
+        if (msie > 0) {
+        // IE 10 or older => return version number
+            data = parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
+            //SI ES 10 NO LO TENGO EN CUENTA
+            //SOLO 9,8 Y 7
+            if (data == 10) { return false;}
+           // alert(data);
+
+
+//            return;
+
+           var options =
+                {
+                    modal: true,
+                    disabledCloseButton: true,
+                    width: ($(window).width() < 636) ? $(window).width() : 636,
+                    displayLoading: false,                    title: "",
+                    show: { effect: "blind", duration: 300 },
+                    hide: { effect: "blind", duration: 300 },
+                    idDialog: "container-banner-full2",
+              close : function(){
+                  // redirijo a consulta/saldos
+                    document.location='/Navigation/MenuLink/1000';
+              } ,
+                htmlGetter: function () { 
+                        $("#modalIE").append("<img id='theImg' src='/Images/image_invalid_browser.png'/>");
+                            button = $("<div align='center'><button class='btn-confirm' style='right:200px !important;'>Cerrar</button></div>");
+                            button.click(function () {
+                            // redirijo a consulta/saldos
+                                document.location='/Navigation/MenuLink/1000';
+                            });
+                            $("#modalIE").append(button);
+
+                }
+            };
+            //muestro MODAL
+            $(document).GODialog($("#modalIE"), options); 
+        }
+
+
+            
+}
+
+function BrowserCompatibilityMessage() {
+    var ua = window.navigator.userAgent;
+    var msie = ua.indexOf('MSIE ');
+    if (msie > 0) {
+        var version = parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
+        // SOLO IE 9,8 Y 7
+        if (version < 10) {
+            return "Tu versi&#243;n de Internet Explorer no es compatible con algunas funcionalidades disponibles en el canal. Actualizate a Internet Explorer 10 o superior.";
+        }
+    }
+
+    return '';
+}
+
+// Agrega un mensaje de error en rojo tipo "span"
+// Recibe el id del div donde se quiere colocar y el mensaje a mostrar
+function MakeSpanError(idElemento, mensaje) {
+    var elemento = document.getElementById(idElemento);
+    $(elemento).addClass("-error");
+
+    var errorSpan = document.createElement("P");
+    $(errorSpan).addClass("span-error");
+    errorSpan.innerHTML = mensaje;
+
+    $(elemento).append(errorSpan);
+}
+
+// Borra un mensaje de error creado con MakeSpanError
+// Recibe el id del div padre del SpanError
+function RemoveSpanError(idElemento) {
+    var elemento = document.getElementById(idElemento);
+    if ($(elemento).hasClass("-error")) {
+        $(elemento).children("p.span-error").remove();
+        $(elemento).removeClass("-error");
+    }
+}
+
+// 
+function PreventBackspaceAndDelete(e) {
+    var code;
+    if (!e) var e = window.event; // some browsers don't pass e, so get it from the window
+    if (e.keyCode) code = e.keyCode; // some browsers use e.keyCode
+    else if (e.which) code = e.which;  // others use e.which
+
+    if (code == 8 || code == 46)
+        return false;
+}
+
+function getErrorSMS(url) {
+
+    var result;
+    $.ajax({
+        url: '/AdaptiveAuthentication/ErrorSmsHandler',
+        dataType: 'json',
+        type: "POST",
+        data: { url: url },
+        success: function (data) {
+            result = data;
+        },
+        error: function (data) {
+            OnAjaxError(data);
+        }
+    });
+
+    return result;
+}
+
+// Invoca al controlador de actualización de token
+// Recibe el token nuevo para reemplazar en anterior
+function RefreshToken(accessToken) {
+
+    var result;
+    $.ajax({
+        url: '/TokenR/Refresh',
+        dataType: 'json',
+        type: "POST",
+        data: { accessToken: accessToken },
+        success: function (data) {
+            result = data;
+        },
+        error: function (data) {
+            OnAjaxError(data);
+        }
+    });
+
+    return result;
+}
+
+if (!Array.prototype.filter) {
+    Array.prototype.filter = function (func, thisArg) {
+        'use strict';
+        if (!((typeof func === 'Function' || typeof func === 'function') && this))
+            throw new TypeError();
+
+        var len = this.length >>> 0,
+            res = new Array(len), // preallocate array
+            t = this, c = 0, i = -1;
+
+        var kValue;
+        if (thisArg === undefined) {
+            while (++i !== len) {
+                // checks to see if the key was set
+                if (i in this) {
+                    kValue = t[i]; // in case t is changed in callback
+                    if (func(t[i], i, t)) {
+                        res[c++] = kValue;
+                    }
+                }
+            }
+        }
+        else {
+            while (++i !== len) {
+                // checks to see if the key was set
+                if (i in this) {
+                    kValue = t[i];
+                    if (func.call(thisArg, t[i], i, t)) {
+                        res[c++] = kValue;
+                    }
+                }
+            }
+        }
+
+        res.length = c; // shrink down array to proper size
+        return res;
+    };
+
+}
+
+
+
+
+function deshabilitarBotones(idbutton) {
+    var buttonPreparar = $(idbutton);
+    if (buttonPreparar) {
+        setearAtributosParaDeshabilitar(buttonPreparar);
+    }
+}
+
+function setearAtributosParaDeshabilitar(jqEl) {
+    jqEl.addClass('disabled');
+    jqEl.prop('disabled', 'disabled');
+    jqEl.on('click', '');
+}
+
+function habilitarBotones(idbutton) {
+    var buttonPreparar = $(idbutton);
+    if (buttonPreparar) {
+        setearAtributosParaHabilitar(buttonPreparar);
+    }
+}
+
+function setearAtributosParaHabilitar(jqEl) {
+    jqEl.removeClass('disabled');
+    jqEl.removeProp('disabled');
+    jqEl.on('click', '');
+}
+// Google analytics V4
+function GA4(eventName, section, subsection, action, elementName, method, state, formName, formField, formAction, item) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+        "event": "ga4.trackEvent",
+        "eventName": eventName,
+        "eventParams": {
+            "section": section,
+            "subsection": subsection,
+            "action": action,
+            "element": elementName,
+            "method": method,
+            "state": state,
+            "form_name": formName,
+            "form_field": formField,
+            "form_action": formAction,
+            "item": item
+        }
+
+        })
+};
+
+
+function GA4Error(section, subsection, formName, formField, formAction,errorType,ErrorMessage,ErrorCode) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+        "event": "ga4.trackEvent",
+        "eventName": "user_interaction",
+        "eventParams": {
+            "section": section,
+            "subsection": subsection,
+            "form_name": formName,
+            "form_field": formField,
+            "form_action": formAction,
+            "error_type": errorType,
+            "error_message": ErrorMessage,
+            "error_code": ErrorCode
+        }
+    });
+}
+
+

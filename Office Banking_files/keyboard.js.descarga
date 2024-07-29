@@ -1,0 +1,136 @@
+var Keyboard = window.SimpleKeyboard.default;
+var selectedInput;
+var keyboard = new Keyboard({
+    onChange: function (input) { return onChange(input) },
+    onKeyPress: function (button) { return onKeyPress(button) },
+    layout: {
+        default: [
+            shuffle(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]).join(" ") + " {bksp}",
+            "{tab} " + shuffle(["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"]).join(" "),
+            "{lock} " + shuffle(["a", "s", "d", "f", "g", "h", "j", "k", "l", "ñ", "'"]).join(" ") + " {enter}",
+            "{shift} " + shuffle(["z", "x", "c", "v", "b", "n", "m", ",", ".", "/"]).join(" ") + " {shift}",
+            //"1 2 3 4 5 6 7 8 9 0 {bksp}",
+            //"{tab} q w e r t y u i o p [ ] \\",
+            //"{lock} a s d f g h j k l ñ ' {enter}",
+            //"{shift} z x c v b n m , . / {shift}",
+            "{space}"
+        ],
+        shift: [
+            shuffle(["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+"]).join(" ") + " {bksp}",
+            "{tab} " + shuffle(["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"]).join(" "),
+            "{lock} " + shuffle(["A", "S", "D", "F", "G", "H", "J", "K", "L", "Ñ", "\""]).join(" ") + " {enter}",
+            "{shift} " + shuffle(["Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"]).join(" ") + " {shift}",
+            //"~ ! @ # $ % ^ & * ( ) _ + {bksp}",
+            //"{tab} Q W E R T Y U I O P { } |",
+            //'{lock} A S D F G H J K L Ñ " {enter}',
+            //"{shift} Z X C V B N M < > ? {shift}",
+            ".com @ {space}"
+        ]
+    },
+    display: {
+        "{bksp}": "Borrar",
+        "{enter}": "Intro",
+        "{shift}": "Shift",
+        "{tab}": "Tab",
+        "{lock}": "Bloq Mayús",
+        "{space}": "Espacio"
+    },
+    tabCharOnTab: false,
+    maxLength: {
+        password: 15,
+    },
+});
+
+//Hacemos un Random del array (teclado) y luego con el join lo separamos con espacios
+function shuffle(array) {
+    var currentIndex = array.length, temporaryValue, randomIndex;
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+}
+
+document.querySelectorAll(".keyboard").forEach(function (input) {
+    input.addEventListener("focus", onInputFocus);
+    // Optional: Use if you want to track input changes
+    // made without simple-keyboard
+    input.addEventListener("change", onInputChange);
+});
+
+function onInputFocus(event) {
+    // selectedInput = `#${event.target.id}`;  "#"+lavariableACA;
+    selectedInput = "#" + event.target.id;
+    keyboard.setOptions({
+        inputName: event.target.id
+    });
+}
+
+function onInputChange(event) {
+    keyboard.setInput(event.target.value, event.target.id);
+}
+
+function onChange(input) {
+    document.querySelector(selectedInput || ".keyboard").value = input;
+}
+
+function onKeyPress(button) {
+
+    /**
+     * Shift functionality
+     */
+    if (button === "{lock}" || button === "{shift}")
+        handleShiftButton();
+
+    if (button === "{enter}")
+        SubmitLoginForm();
+
+    if (button === "{tab}")
+        handleTab();
+    
+}
+
+function handleTab() {
+    var userID = document.getElementById('UserID');
+    var password = document.getElementById('password');
+
+    if (selectedInput === '#password') userID.focus();
+    else if (selectedInput === '#UserID') password.focus();
+    return;
+}
+
+function handleShiftButton() {
+
+    var currentLayout = keyboard.options.layoutName;
+    var shiftToggle = currentLayout === "default" ? "shift" : "default";
+
+    keyboard.setOptions({
+        layoutName: shiftToggle
+    });
+}
+
+var keyboardIcon = document.getElementById("keyboardIcon");
+//const keyboardTrigger = document.getElementsByClassName("keyboard-trigger");
+var keyboardElem = document.getElementById("simpleKeyboard");
+
+$('.keyboard-trigger').click(function (e) {
+    showKeyboard = !showKeyboard;
+    if (!showKeyboard) {
+        keyboardIcon.style.color = "#666666";
+        keyboardElem.style.display = "none";
+    }
+    if (showKeyboard) {
+        keyboardIcon.style.color = "#FA8F2C";
+        keyboardElem.style.display = "block";
+    }
+});

